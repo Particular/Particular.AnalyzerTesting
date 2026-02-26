@@ -5,6 +5,7 @@ namespace Particular.AnalyzerTesting;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using NUnit.Framework;
 
@@ -12,10 +13,21 @@ using NUnit.Framework;
 /// A test fixture that runs multiple tests on source code using a Roslyn analyzer and code fix to ensure that the changes
 /// made to the source code match the expected results.
 /// </summary>
-public abstract class CodeFixTestFixture<TAnalyzer, TCodeFix> : AnalyzerTestFixture<TAnalyzer>
+public abstract class CodeFixTestFixture<TAnalyzer, TCodeFix>
     where TAnalyzer : DiagnosticAnalyzer, new()
     where TCodeFix : CodeFixProvider, new()
 {
+    /// <summary>
+    /// Override in a test fixture to change the LanguageVersion used to compile the tests.
+    /// </summary>
+    public virtual LanguageVersion AnalyzerLanguageVersion { get; } = LanguageVersion.CSharp14;
+
+    /// <summary>
+    /// Override in a test fixture to apply configuration to every test in the fixture.
+    /// </summary>
+    /// <param name="test"></param>
+    protected virtual void ConfigureFixtureTests(CodeFixTest test) { }
+
     /// <summary>
     /// Assert that the code fix applied to the original code creates the expected output.
     /// </summary>
@@ -26,8 +38,9 @@ public abstract class CodeFixTestFixture<TAnalyzer, TCodeFix> : AnalyzerTestFixt
 
         NUnit.Framework.Assert.That(originalFiles.Keys, Is.EquivalentTo(fixedFiles.Keys));
 
-        var test = AnalyzerTest.ForAnalyzer<TAnalyzer>("TestProject")
-            .WithCodeFix<TCodeFix>();
+        var test = CodeFixTest.ForAnalyzer<TAnalyzer>("TestProject")
+            .WithCodeFix<TCodeFix>()
+            .WithLangVersion(AnalyzerLanguageVersion);
 
         if (!mustCompile)
         {
@@ -39,7 +52,7 @@ public abstract class CodeFixTestFixture<TAnalyzer, TCodeFix> : AnalyzerTestFixt
         foreach (var file in originalFiles.Values)
         {
             var expectedFile = fixedFiles[file.Filename];
-            test.WithCodeFixSource(file.Content, expectedFile.Content, file.Filename);
+            test.WithSource(file.Content, expectedFile.Content, file.Filename);
         }
 
         await test.AssertCodeFixes();

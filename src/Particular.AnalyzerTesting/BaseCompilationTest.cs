@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 /// <summary>
 /// A base class for <see cref="AnalyzerTest" /> and <see cref="SourceGeneratorTest" />.
 /// </summary>
-public abstract class CompilationTestBase<TSelf> where TSelf : CompilationTestBase<TSelf>
+public abstract class BaseCompilationTest<TSelf> where TSelf : BaseCompilationTest<TSelf>
 {
     private protected readonly string outputAssemblyName;
     private protected readonly List<DiagnosticAnalyzer> analyzers = [];
@@ -19,7 +19,7 @@ public abstract class CompilationTestBase<TSelf> where TSelf : CompilationTestBa
     private protected bool suppressCompilationErrors;
     private protected readonly Dictionary<string, string> features = [];
 
-    private protected CompilationTestBase(string? outputAssemblyName = null)
+    private protected BaseCompilationTest(string? outputAssemblyName = null)
     {
         this.outputAssemblyName = outputAssemblyName ?? "TestAssembly";
 
@@ -33,7 +33,7 @@ public abstract class CompilationTestBase<TSelf> where TSelf : CompilationTestBa
         }
     }
 
-    TSelf Self => (TSelf)this;
+    private protected TSelf Self => (TSelf)this;
 
     /// <summary>
     /// Reference assemblies for the compilation. Can be added fluently using <see cref="AddReferences(MetadataReference[])" /> or <see cref="AddReferences(IEnumerable&lt;MetadataReference&gt;)" />.

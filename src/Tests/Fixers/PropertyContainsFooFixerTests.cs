@@ -53,9 +53,9 @@ public class PropertyContainsFooFixerTests
                            }
                        }
                        """;
-        await AnalyzerTest.ForAnalyzer<PropertyContainsFooAnalyzer>()
+        await CodeFixTest.ForAnalyzer<PropertyContainsFooAnalyzer>()
             .WithCodeFix<PropertyContainsFooFixer>()
-            .WithCodeFixSource(code, expected, "Code.cs")
+            .WithSource(code, expected, "Code.cs")
             .AssertCodeFixes();
     }
 }

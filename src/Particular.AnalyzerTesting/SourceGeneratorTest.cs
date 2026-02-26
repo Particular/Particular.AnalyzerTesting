@@ -19,7 +19,7 @@ using Particular.Approvals;
 /// <summary>
 /// A tool for testing Roslyn source generators.
 /// </summary>
-public sealed partial class SourceGeneratorTest : CompilationTestBase<SourceGeneratorTest>
+public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTest>
 {
     readonly List<(string Filename, string Source)> sources = [];
     readonly List<ISourceGenerator> generators = [];
