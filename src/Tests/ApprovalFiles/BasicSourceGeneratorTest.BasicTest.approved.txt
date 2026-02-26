@@ -1,0 +1,8 @@
+// == FakeAnalyzers/Particular.Analyzers.SimpleSourceGenerator/MarkedItemsInComment.g.cs ===============================
+// Marked Items:
+//   - Hello
+//   - there
+//   - Enjoy
+//   - the
+//   - test
+//   - results

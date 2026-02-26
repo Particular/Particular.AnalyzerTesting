@@ -1,0 +1,9 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove($(MSBuildThisFile), $(MSBuildThisFileDirectory)..))" Condition="Exists($([MSBuild]::GetPathOfFileAbove($(MSBuildThisFile), $(MSBuildThisFileDirectory)..)))" />
+
+  <ItemGroup Label="Remove Particular.Analyzers from the project so those diagnostics don't get in the way">
+    <PackageReference Remove="Particular.Analyzers" />
+  </ItemGroup>
+
+</Project>

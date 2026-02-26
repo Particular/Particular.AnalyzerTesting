@@ -3,13 +3,18 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsRoslynComponent>true</IsRoslynComponent>
+    <DefineConstants>$(DefineConstants);FIXES</DefineConstants>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <LangVersion>14.0</LangVersion>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynPackageVersion)" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynPackageVersion)" PrivateAssets="All" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\FakeAnalyzers\DiagnosticIds.cs" />
+  </ItemGroup>
+
 
 </Project>

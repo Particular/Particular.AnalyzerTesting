@@ -4,9 +4,9 @@
 
     public static class SuppressionDescriptors
     {
-        public static readonly SuppressionDescriptor CancellationTokenParameterUnused = new(
-            SuppressionIds.CancellationTokenParameterUnused,
+        public static readonly SuppressionDescriptor FakeSuppression = new(
+            SuppressionIds.FakeSuppression,
             "IDE0060",
-            "Allow CA2016 to suggest forwarding the CancellationToken parameter to methods that may take one in the future.");
+            "Fake suppression.");
     }
 }

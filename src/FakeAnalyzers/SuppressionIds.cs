@@ -2,6 +2,6 @@
 {
     public static class SuppressionIds
     {
-        public const string CancellationTokenParameterUnused = "PSS0001";
+        public const string FakeSuppression = "FS0001";
     }
 }

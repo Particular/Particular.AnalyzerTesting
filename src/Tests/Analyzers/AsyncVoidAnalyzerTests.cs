@@ -6,10 +6,25 @@
 
     public class AsyncVoidAnalyzerTests : AnalyzerTestFixture<AsyncVoidAnalyzer>
     {
+        protected override void ConfigureFixtureTests(AnalyzerTest test)
+        {
+            test.WithSource("""
+                            namespace NServiceBus
+                            {
+                               interface ICancellableContext { }
+                               class CancellableContext : ICancellableContext { }
+                               interface IMessage { }
+                            }
+                            """, "ExternalTypes.cs");
+
+            test.WithCommonUsings("System", "System.Threading", "System.Threading.Tasks", "NServiceBus");
+        }
+
         [Test]
-        public Task NoAsyncVoid()
+        public Task ParseMultipleFiles()
         {
             var code = """
+                // Foo1.cs
                 public class Foo
                 {
                     async void [|Bad1|]() { await Task.Delay(1); }
@@ -21,7 +36,11 @@
                     static public async void [|Bad7|]() { await Task.Delay(1); }
                     static protected async void [|Bad8|]() { await Task.Delay(1); }
                     async void [|Bad9|](string a, int b) { await Task.Delay(1); }
-
+                }
+                -------
+                // Foo2.cs
+                public class Foo2
+                {
                     async Task ReturnsTask1() { await Task.Delay(1); }
                     private async Task ReturnsTask2() { await Task.Delay(1); }
                     public async Task ReturnsTask3() { await Task.Delay(1); }
@@ -31,7 +50,11 @@
                     static public async Task ReturnsTask7() { await Task.Delay(1); }
                     static protected async Task ReturnsTask8() { await Task.Delay(1); }
                     async Task ReturnsTask9(string a, int b) { await Task.Delay(1); }
-
+                }
+                ---------- random separator note
+                // Foo3.cs
+                public class Foo3
+                {
                     async Task ReturnsValueTask1() { await Task.Delay(1); }
                     private async Task ReturnsValueTask2() { await Task.Delay(1); }
                     public async Task ReturnsValueTask3() { await Task.Delay(1); }
