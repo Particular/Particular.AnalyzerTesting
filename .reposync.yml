@@ -1,0 +1,4 @@
+exclusions:
+- LICENSE.md
+- src/NServiceBus.snk
+- Package-README.md
