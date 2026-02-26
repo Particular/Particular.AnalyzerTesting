@@ -1,4 +1,3 @@
-#nullable enable
 namespace Particular.AnalyzerTesting;
 
 using System;
@@ -64,7 +63,19 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
     private protected static async Task<Diagnostic[]> GetCompilerDiagnostics(Project project, CancellationToken cancellationToken = default)
     {
         var compilerDiagnostics = (await Task.WhenAll(project.Documents
-                .Select(doc => doc.GetCompilerDiagnostics(cancellationToken))))
+                .Select(async doc =>
+                {
+                    var model = await doc.GetSemanticModelAsync(cancellationToken);
+                    if (model is null)
+                    {
+                        return Enumerable.Empty<Diagnostic>();
+                    }
+                    return model
+                        .GetDiagnostics(cancellationToken: cancellationToken)
+                        .Where(diagnostic => diagnostic.Severity != DiagnosticSeverity.Hidden)
+                        .OrderBy(diagnostic => diagnostic.Location.SourceSpan)
+                        .ThenBy(diagnostic => diagnostic.Id);
+                })))
             .SelectMany(diagnostics => diagnostics)
             .ToArray();
 
@@ -72,7 +83,7 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
         return compilerDiagnostics;
     }
 
-    private protected async Task<Diagnostic[]> GetAnalyzerDiagnostics(Compilation? compilation, string[] ignoreDiagnosticIds, CancellationToken cancellationToken = default)
+    private protected async Task<Diagnostic[]> GetAnalyzerDiagnostics(Compilation compilation, string[] ignoreDiagnosticIds, CancellationToken cancellationToken = default)
     {
         var analyzerTasks = analyzers
             .Select(analyzer => compilation.GetAnalyzerDiagnostics(analyzer, cancellationToken))

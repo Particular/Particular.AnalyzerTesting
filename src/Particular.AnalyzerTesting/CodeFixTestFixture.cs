@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-namespace Particular.AnalyzerTesting;
+﻿namespace Particular.AnalyzerTesting;
 
 using System.Linq;
 using System.Threading.Tasks;

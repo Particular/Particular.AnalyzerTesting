@@ -1,4 +1,3 @@
-#nullable enable
 namespace Particular.AnalyzerTesting;
 
 using System;
@@ -85,6 +84,10 @@ public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
             var compilerDiagnostics = await GetCompilerDiagnostics(project, cancellationToken);
 
             var compilation = await project.GetCompilationAsync(cancellationToken);
+            if (compilation is null)
+            {
+                throw new Exception("Result of project compilation is null");
+            }
             compilation.Compile(!suppressCompilationErrors);
 
             var analyzerDiagnostics = await GetAnalyzerDiagnostics(compilation, [], cancellationToken);

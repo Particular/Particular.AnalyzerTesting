@@ -1,4 +1,3 @@
-#nullable enable
 namespace Particular.AnalyzerTesting;
 
 using System;
@@ -67,6 +66,10 @@ public sealed class AnalyzerTest : BaseAnalyzerTest<AnalyzerTest>
         _ = await GetCompilerDiagnostics(project, cancellationToken);
 
         var compilation = await project.GetCompilationAsync(cancellationToken);
+        if (compilation is null)
+        {
+            throw new Exception("Result of project compilation is null");
+        }
         compilation.Compile(!suppressCompilationErrors);
 
         var analyzerDiagnostics = await GetAnalyzerDiagnostics(compilation, ignoreDiagnosticIds, cancellationToken);

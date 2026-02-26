@@ -1,4 +1,3 @@
-#nullable enable
 namespace Particular.AnalyzerTesting;
 
 using System;

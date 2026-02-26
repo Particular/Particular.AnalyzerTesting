@@ -3,6 +3,7 @@
   <PropertyGroup>
     <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
     <MinVerAutoIncrement>minor</MinVerAutoIncrement>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>

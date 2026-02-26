@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-namespace Particular.AnalyzerTesting;
+﻿namespace Particular.AnalyzerTesting;
 
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp;
