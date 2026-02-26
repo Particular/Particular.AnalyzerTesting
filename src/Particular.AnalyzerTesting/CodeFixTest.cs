@@ -130,8 +130,8 @@ public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
         foreach (var expectedSource in expectedResults)
         {
             var updated = updatedSourcesByFilename.GetValueOrDefault(expectedSource.Filename);
-            Assert.That(updated, Is.Not.Null, $"No updated code for source filename {expectedSource.Filename}");
-            Assert.That(updated!.Source, Is.EqualTo(expectedSource.Source).IgnoreLineEndingFormat);
+            NUnit.Framework.Assert.That(updated, Is.Not.Null, $"No updated code for source filename {expectedSource.Filename}");
+            NUnit.Framework.Assert.That(updated!.Source, Is.EqualTo(expectedSource.Source).IgnoreLineEndingFormat);
         }
     }
 

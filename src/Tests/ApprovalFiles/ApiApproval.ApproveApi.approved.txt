@@ -1,0 +1,96 @@
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Tests")]
+namespace Particular.AnalyzerTesting
+{
+    public sealed class AnalyzerTest : Particular.AnalyzerTesting.BaseAnalyzerTest<Particular.AnalyzerTesting.AnalyzerTest>
+    {
+        public System.Threading.Tasks.Task AssertDiagnostics(params string[] expectedDiagnosticIds) { }
+        public System.Threading.Tasks.Task AssertDiagnostics(string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds) { }
+        public Particular.AnalyzerTesting.AnalyzerTest WithSource(string source, string? filename = null) { }
+        public static void ConfigureAllAnalyzerTests(System.Action<Particular.AnalyzerTesting.AnalyzerTest> configure) { }
+        public static Particular.AnalyzerTesting.AnalyzerTest ForAnalyzer<TAnalyzer>([System.Runtime.CompilerServices.CallerMemberName] string? outputAssemblyName = null)
+            where TAnalyzer : Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer, new () { }
+    }
+    public class AnalyzerTestFixture<TAnalyzer>
+        where TAnalyzer : Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer, new ()
+    {
+        public AnalyzerTestFixture() { }
+        public virtual Microsoft.CodeAnalysis.CSharp.LanguageVersion AnalyzerLanguageVersion { get; }
+        protected System.Threading.Tasks.Task Assert(string markupCode) { }
+        protected System.Threading.Tasks.Task Assert(string markupCode, string expectedDiagnosticId) { }
+        protected System.Threading.Tasks.Task Assert(string markupCode, string[] expectedDiagnosticIds) { }
+        protected System.Threading.Tasks.Task Assert(string markupCode, string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds) { }
+        protected System.Threading.Tasks.Task Assert(string markupCode, string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds, bool mustCompile) { }
+        protected virtual void ConfigureFixtureTests(Particular.AnalyzerTesting.AnalyzerTest test) { }
+    }
+    public class BaseAnalyzerTest<TSelf> : Particular.AnalyzerTesting.BaseCompilationTest<TSelf>
+        where TSelf : Particular.AnalyzerTesting.BaseAnalyzerTest<TSelf>
+    {
+        public TSelf WithCommonUsings(params string[] namespaceNames) { }
+    }
+    public abstract class BaseCompilationTest<TSelf>
+        where TSelf : Particular.AnalyzerTesting.BaseCompilationTest<TSelf>
+    {
+        public Microsoft.CodeAnalysis.CSharp.LanguageVersion LangVersion { get; }
+        public System.Collections.Generic.List<Microsoft.CodeAnalysis.MetadataReference> References { get; }
+        public TSelf AddReferences(params Microsoft.CodeAnalysis.MetadataReference[] references) { }
+        public TSelf AddReferences(System.Collections.Generic.IEnumerable<Microsoft.CodeAnalysis.MetadataReference> references) { }
+        public TSelf BuildAs(Microsoft.CodeAnalysis.OutputKind outputKind) { }
+        public TSelf SuppressCompilationErrors() { }
+        public TSelf WithAnalyzer<TAnalyzer>()
+            where TAnalyzer : Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer, new () { }
+        public TSelf WithInterceptorNamespace(string interceptorNamespace) { }
+        public TSelf WithLangVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion langVersion) { }
+        public TSelf WithProperty(string name, string value) { }
+    }
+    public sealed class CodeFixTest : Particular.AnalyzerTesting.BaseAnalyzerTest<Particular.AnalyzerTesting.CodeFixTest>
+    {
+        public System.Threading.Tasks.Task AssertCodeFixes() { }
+        public Particular.AnalyzerTesting.CodeFixTest WithCodeFix<TCodeFix>()
+            where TCodeFix : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider, new () { }
+        public Particular.AnalyzerTesting.CodeFixTest WithSource(string source, string expectedResult, string? filename = null) { }
+        public static void ConfigureAllCodeFixTests(System.Action<Particular.AnalyzerTesting.CodeFixTest> configure) { }
+        public static Particular.AnalyzerTesting.CodeFixTest ForAnalyzer<TAnalyzer>([System.Runtime.CompilerServices.CallerMemberName] string? outputAssemblyName = null)
+            where TAnalyzer : Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer, new () { }
+    }
+    public abstract class CodeFixTestFixture<TAnalyzer, TCodeFix>
+        where TAnalyzer : Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer, new ()
+        where TCodeFix : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider, new ()
+    {
+        protected CodeFixTestFixture() { }
+        public virtual Microsoft.CodeAnalysis.CSharp.LanguageVersion AnalyzerLanguageVersion { get; }
+        protected System.Threading.Tasks.Task Assert(string original, string expected, bool mustCompile = true) { }
+        protected virtual void ConfigureFixtureTests(Particular.AnalyzerTesting.CodeFixTest test) { }
+    }
+    public enum GeneratorTestOutput
+    {
+        GeneratedOnly = 0,
+        SourceOnly = 1,
+        All = 2,
+    }
+    public sealed class SourceGeneratorTest : Particular.AnalyzerTesting.BaseCompilationTest<Particular.AnalyzerTesting.SourceGeneratorTest>
+    {
+        public Particular.AnalyzerTesting.SourceGeneratorTest Approve(System.Func<string, string>? scrubber = null, [System.Runtime.CompilerServices.CallerFilePath] string? callerFilePath = null, [System.Runtime.CompilerServices.CallerMemberName] string? callerMemberName = null) { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest AssertRunsAreEqual() { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest ControlOutput(Particular.AnalyzerTesting.GeneratorTestOutput output) { }
+        public string GetCompilationOutput(bool withLineNumbers = false) { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest OutputSteps([System.Runtime.CompilerServices.ParamCollection] [System.Runtime.CompilerServices.ScopedRef] System.ReadOnlySpan<string> specificStages) { }
+        [System.Diagnostics.CodeAnalysis.MemberNotNull("build")]
+        public Particular.AnalyzerTesting.SourceGeneratorTest Run() { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest ShouldNotGenerateCode() { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest SuppressDiagnosticErrors() { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest ToConsole() { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest WithIncrementalGenerator<TGenerator>(params string[] stages)
+            where TGenerator : Microsoft.CodeAnalysis.IIncrementalGenerator, new () { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest WithScenarioName(string name) { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest WithSource(string source, string? filename = null) { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest WithSourceGenerator<TGenerator>()
+            where TGenerator : Microsoft.CodeAnalysis.ISourceGenerator, new () { }
+        public Particular.AnalyzerTesting.SourceGeneratorTest WithSuppressor<TSuppressor>()
+            where TSuppressor : Microsoft.CodeAnalysis.Diagnostics.DiagnosticSuppressor, new () { }
+        public static void ConfigureAllSourceGeneratorTests(System.Action<Particular.AnalyzerTesting.SourceGeneratorTest> configure) { }
+        public static Particular.AnalyzerTesting.SourceGeneratorTest ForIncrementalGenerator<TGenerator>(string[]? stages = null, [System.Runtime.CompilerServices.CallerMemberName] string? outputAssemblyName = null)
+            where TGenerator : Microsoft.CodeAnalysis.IIncrementalGenerator, new () { }
+        public static Particular.AnalyzerTesting.SourceGeneratorTest ForSourceGenerator<TGenerator>([System.Runtime.CompilerServices.CallerMemberName] string? outputAssemblyName = null)
+            where TGenerator : Microsoft.CodeAnalysis.ISourceGenerator, new () { }
+    }
+}
