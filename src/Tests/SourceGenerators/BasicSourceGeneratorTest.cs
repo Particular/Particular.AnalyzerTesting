@@ -45,6 +45,8 @@ public class BasicSourceGeneratorTest
         SourceGeneratorTest.ForIncrementalGenerator<SimpleSourceGenerator>()
             .WithSource(source)
             .Approve()
-            .AssertRunsAreEqual();
+            .ToConsole()
+            .AssertRunsAreEqual()
+            .OutputSteps();
     }
 }

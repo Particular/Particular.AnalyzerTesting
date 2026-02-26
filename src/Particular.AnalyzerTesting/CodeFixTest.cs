@@ -108,16 +108,11 @@ public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
             foreach (var projectDocument in project.Documents)
             {
                 var document = projectDocument;
-                var docActions = actionsByDocumentName[document.Name];
-                // TODO: Replace Take(1) with First() and remove loop if I keep this
-                foreach (var action in docActions.Take(1))
-                {
-                    var operations = await action.Action.GetOperationsAsync(cancellationToken);
-                    var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
-                    document = solution.GetDocument(document!.Id);
-                    var tmpSrc = await GetUpdatedCode(document!, cancellationToken);
-                    _ = tmpSrc;
-                }
+                var firstAction = actionsByDocumentName[document.Name].First();
+
+                var operations = await firstAction.Action.GetOperationsAsync(cancellationToken);
+                var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+                document = solution.GetDocument(document!.Id);
 
                 if (document is not null)
                 {

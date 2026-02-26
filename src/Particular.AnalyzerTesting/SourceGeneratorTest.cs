@@ -363,11 +363,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
             _ = Run();
         }
 
-        // TODO: Align with AnalyzerTestFixtureState
-        if (Environment.GetEnvironmentVariable("CI") != "true")
-        {
-            _ = ToConsole();
-        }
+        _ = ToConsole();
 
         var output = GetCompilationOutput();
         var toApprove = ScrubPlatformSpecificInterceptorData().Replace(output, m => m.Value.Replace(m.Groups["InterceptData"].Value, "{PLATFORM-SPECIFIC-BASE64-DATA}"));
@@ -417,9 +413,13 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
             _ = Run();
         }
 
-        var output = GetCompilationOutput(true);
-        Console.WriteLine(output);
-        wroteToConsole = true;
+        if (AnalyzerTestFixtureState.VerboseLogging)
+        {
+            var output = GetCompilationOutput(true);
+            Console.WriteLine(output);
+            wroteToConsole = true;
+        }
+
         return this;
     }
 
