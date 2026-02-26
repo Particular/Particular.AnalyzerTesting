@@ -1,6 +1,7 @@
 #nullable enable
 namespace Particular.AnalyzerTesting;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -16,14 +17,24 @@ using Microsoft.CodeAnalysis.Simplification;
 using NUnit.Framework;
 
 /// <summary>
-/// Test a Roslyn code fix using a fluent API. Start with <code>CodeFixTest.<see cref="ForAnalyzer" /></code>
+/// Test a Roslyn code fix using a fluent API. Start with <c>CodeFixTest.<see cref="ForAnalyzer" />&lt;TAnalyzer&gt;().<see cref="WithCodeFix" />&lt;TCodeFix&gt;()</c>.
 /// </summary>
 public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
 {
+    static Action<CodeFixTest>? configureAllTests;
+
     CodeFixTest(string? outputAssemblyName = null)
         : base(outputAssemblyName)
     {
+        configureAllTests?.Invoke(this);
     }
+
+    /// <summary>
+    /// Configures all code fix tests (including those built using <see cref="CodeFixTest" /> and <see cref="CodeFixTestFixture&lt;TAnalyzer,TCodeFix&gt;" />
+    /// in the project by storing a configuration action in a static variable. Use sparingly from within a <see cref="SetUpFixtureAttribute">SetUpFixture</see>.
+    /// </summary>
+    public static void ConfigureAllCodeFixTests(Action<CodeFixTest> configure)
+        => configureAllTests = configure;
 
     /// <summary>
     /// Begin a code fix test by specifying the analyzer that should be tested.

@@ -24,20 +24,11 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
     private protected readonly List<(string Filename, string Expected)> expectedFixResults = [];
     private protected readonly List<CodeFixProvider> codeFixes = [];
     readonly List<string> commonUsings = [];
-    static Action<TSelf>? configureAllTests;
 
     private protected BaseAnalyzerTest(string? outputAssemblyName = null)
         : base(outputAssemblyName)
     {
-        configureAllTests?.Invoke(Self);
     }
-
-    /// <summary>
-    /// Configures all analyzer tests (including those built using <see cref="AnalyzerTest" /> and <see cref="AnalyzerTestFixture&lt;TAnalyzer&gt;" />
-    /// in the project by storing a configuration action in a static variable. Use sparingly from within a <see cref="SetUpFixtureAttribute">SetUpFixture</see>.
-    /// </summary>
-    public static void ConfigureAllAnalyzerTests(Action<TSelf> configure)
-        => configureAllTests = configure;
 
     /// <summary>
     /// To save typing in tests, specify common namespaces that should be prepended to all code sources in the test.

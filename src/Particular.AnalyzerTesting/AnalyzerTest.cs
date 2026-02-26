@@ -1,6 +1,7 @@
 #nullable enable
 namespace Particular.AnalyzerTesting;
 
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -9,14 +10,24 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using NUnit.Framework;
 
 /// <summary>
-/// Test a Roslyn analyzer using a fluent API. Start with <code>AnalyzerTest.<see cref="ForAnalyzer" /></code>
+/// Test a Roslyn analyzer using a fluent API. Start with <c>CodeFixTest.<see cref="ForAnalyzer" />&lt;TAnalyzer&gt;()</c>.
 /// </summary>
-public sealed partial class AnalyzerTest : BaseAnalyzerTest<AnalyzerTest>
+public sealed class AnalyzerTest : BaseAnalyzerTest<AnalyzerTest>
 {
+    static Action<AnalyzerTest>? configureAllTests;
+
     AnalyzerTest(string? outputAssemblyName = null)
         : base(outputAssemblyName)
     {
+        configureAllTests?.Invoke(this);
     }
+
+    /// <summary>
+    /// Configures all analyzer tests (including those built using <see cref="AnalyzerTest" /> and <see cref="AnalyzerTestFixture&lt;TAnalyzer&gt;" />
+    /// in the project by storing a configuration action in a static variable. Use sparingly from within a <see cref="SetUpFixtureAttribute">SetUpFixture</see>.
+    /// </summary>
+    public static void ConfigureAllAnalyzerTests(Action<AnalyzerTest> configure)
+        => configureAllTests = configure;
 
     /// <summary>
     /// Begin an analyzer test by specifying the analyzer that should be tested.
