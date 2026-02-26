@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Particular.Analyzers\Particular.Analyzers.csproj" />
+    <ProjectReference Include="..\FakeAnalyzers\FakeAnalyzers.csproj" />
     <ProjectReference Include="..\Particular.AnalyzerTesting\Particular.AnalyzerTesting.csproj" />
   </ItemGroup>
 

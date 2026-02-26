@@ -4,6 +4,6 @@
     <File Path="Custom.Build.props" />
   </Folder>
   <Project Path="Tests/Tests.csproj" />
-  <Project Path="Particular.Analyzers/Particular.Analyzers.csproj" />
+  <Project Path="FakeAnalyzers/FakeAnalyzers.csproj" />
   <Project Path="Particular.AnalyzerTesting/Particular.AnalyzerTesting.csproj" />
 </Solution>
