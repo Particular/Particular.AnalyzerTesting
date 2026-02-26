@@ -1,45 +1,44 @@
-﻿namespace FakeAnalyzers
+﻿namespace FakeAnalyzers;
+
+using System.Collections.Immutable;
+using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public class AsyncVoidAnalyzer : DiagnosticAnalyzer
 {
-    using System.Collections.Immutable;
-    using System.Linq;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Microsoft.CodeAnalysis.Diagnostics;
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [DiagnosticDescriptors.AsyncVoid];
 
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class AsyncVoidAnalyzer : DiagnosticAnalyzer
+    public override void Initialize(AnalysisContext context)
     {
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [DiagnosticDescriptors.AsyncVoid];
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        public override void Initialize(AnalysisContext context)
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.LocalFunctionStatement);
+    }
+
+    void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+    {
+        if (context.Node is MethodDeclarationSyntax method)
         {
-            context.EnableConcurrentExecution();
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
-            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.LocalFunctionStatement);
+            Analyze(context, method.Identifier, method.ReturnType, method.Modifiers);
         }
-
-        void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+        else if (context.Node is LocalFunctionStatementSyntax localFn)
         {
-            if (context.Node is MethodDeclarationSyntax method)
-            {
-                Analyze(context, method.Identifier, method.ReturnType, method.Modifiers);
-            }
-            else if (context.Node is LocalFunctionStatementSyntax localFn)
-            {
-                Analyze(context, localFn.Identifier, localFn.ReturnType, localFn.Modifiers);
-            }
+            Analyze(context, localFn.Identifier, localFn.ReturnType, localFn.Modifiers);
         }
+    }
 
-        static void Analyze(SyntaxNodeAnalysisContext context, SyntaxToken identifier, TypeSyntax returnType, SyntaxTokenList modifiers)
+    static void Analyze(SyntaxNodeAnalysisContext context, SyntaxToken identifier, TypeSyntax returnType, SyntaxTokenList modifiers)
+    {
+        if (returnType?.ToString() == "void" && modifiers.Any(token => token.IsKind(SyntaxKind.AsyncKeyword)))
         {
-            if (returnType?.ToString() == "void" && modifiers.Any(token => token.IsKind(SyntaxKind.AsyncKeyword)))
-            {
-                var diagnostic = Diagnostic.Create(DiagnosticDescriptors.AsyncVoid, identifier.GetLocation());
-                context.ReportDiagnostic(diagnostic);
-            }
+            var diagnostic = Diagnostic.Create(DiagnosticDescriptors.AsyncVoid, identifier.GetLocation());
+            context.ReportDiagnostic(diagnostic);
         }
     }
 }

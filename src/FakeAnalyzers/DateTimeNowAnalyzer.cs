@@ -1,47 +1,46 @@
-﻿namespace FakeAnalyzers
+﻿namespace FakeAnalyzers;
+
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public class DateTimeNowAnalyzer : DiagnosticAnalyzer
 {
-    using System.Collections.Immutable;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Microsoft.CodeAnalysis.Diagnostics;
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [DiagnosticDescriptors.NowUsedInsteadOfUtcNow];
 
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class DateTimeNowAnalyzer : DiagnosticAnalyzer
+    public override void Initialize(AnalysisContext context)
     {
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [DiagnosticDescriptors.NowUsedInsteadOfUtcNow];
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.EnableConcurrentExecution();
+        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.SimpleMemberAccessExpression);
+    }
 
-        public override void Initialize(AnalysisContext context)
+    static void Analyze(SyntaxNodeAnalysisContext context)
+    {
+        if (context.Node is not MemberAccessExpressionSyntax memberAccess)
         {
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-            context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.SimpleMemberAccessExpression);
+            return;
         }
 
-        static void Analyze(SyntaxNodeAnalysisContext context)
+        if (memberAccess.Name.ToString() != "Now")
         {
-            if (context.Node is not MemberAccessExpressionSyntax memberAccess)
-            {
-                return;
-            }
+            return;
+        }
 
-            if (memberAccess.Name.ToString() != "Now")
-            {
-                return;
-            }
+        if (memberAccess.Expression is not IdentifierNameSyntax identifier)
+        {
+            return;
+        }
 
-            if (memberAccess.Expression is not IdentifierNameSyntax identifier)
-            {
-                return;
-            }
+        var value = identifier?.Identifier.ValueText;
 
-            var value = identifier?.Identifier.ValueText;
-
-            if (value is "DateTime" or "DateTimeOffset")
-            {
-                var diagnostic = Diagnostic.Create(DiagnosticDescriptors.NowUsedInsteadOfUtcNow, memberAccess.GetLocation(), value);
-                context.ReportDiagnostic(diagnostic);
-            }
+        if (value is "DateTime" or "DateTimeOffset")
+        {
+            var diagnostic = Diagnostic.Create(DiagnosticDescriptors.NowUsedInsteadOfUtcNow, memberAccess.GetLocation(), value);
+            context.ReportDiagnostic(diagnostic);
         }
     }
 }

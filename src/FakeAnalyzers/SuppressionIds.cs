@@ -1,7 +1,6 @@
-﻿namespace FakeAnalyzers
+﻿namespace FakeAnalyzers;
+
+public static class SuppressionIds
 {
-    public static class SuppressionIds
-    {
-        public const string FakeSuppression = "FS0001";
-    }
+    public const string FakeSuppression = "FS0001";
 }

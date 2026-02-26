@@ -1,12 +1,11 @@
-﻿namespace FakeAnalyzers
-{
-    using Microsoft.CodeAnalysis;
+﻿namespace FakeAnalyzers;
 
-    public static class SuppressionDescriptors
-    {
-        public static readonly SuppressionDescriptor FakeSuppression = new(
-            SuppressionIds.FakeSuppression,
-            "IDE0060",
-            "Fake suppression.");
-    }
+using Microsoft.CodeAnalysis;
+
+public static class SuppressionDescriptors
+{
+    public static readonly SuppressionDescriptor FakeSuppression = new(
+        SuppressionIds.FakeSuppression,
+        "IDE0060",
+        "Fake suppression.");
 }

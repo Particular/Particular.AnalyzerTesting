@@ -1,30 +1,30 @@
-﻿namespace Tests
+﻿namespace Tests;
+
+using System.Threading.Tasks;
+using FakeAnalyzers;
+using NUnit.Framework;
+using Particular.AnalyzerTesting;
+
+public class DateTimeNowAnalyzerTests : AnalyzerTestFixture<DateTimeNowAnalyzer>
 {
-    using System.Threading.Tasks;
-    using FakeAnalyzers;
-    using NUnit.Framework;
-    using Particular.AnalyzerTesting;
-
-    public class DateTimeNowAnalyzerTests : AnalyzerTestFixture<DateTimeNowAnalyzer>
+    protected override void ConfigureFixtureTests(AnalyzerTest test)
     {
-        protected override void ConfigureFixtureTests(AnalyzerTest test)
-        {
-            test.WithSource("""
-                            namespace NServiceBus
-                            {
-                               interface ICancellableContext { }
-                               class CancellableContext : ICancellableContext { }
-                               interface IMessage { }
-                            }
-                            """, "ExternalTypes.cs");
+        test.WithSource("""
+                        namespace NServiceBus
+                        {
+                           interface ICancellableContext { }
+                           class CancellableContext : ICancellableContext { }
+                           interface IMessage { }
+                        }
+                        """, "ExternalTypes.cs");
 
-            test.WithCommonUsings("System", "System.Threading", "System.Threading.Tasks", "NServiceBus");
-        }
+        test.WithCommonUsings("System", "System.Threading", "System.Threading.Tasks", "NServiceBus");
+    }
 
-        [Test]
-        public Task SimpleTest()
-        {
-            const string code = @"
+    [Test]
+    public Task SimpleTest()
+    {
+        const string code = @"
 public class Foo
 {
     public void Bar()
@@ -44,8 +44,7 @@ public class Foo
     public void Use(DateTime dt) {}
     public void Use(DateTimeOffset dto) {}
 }"
-;
-            return Assert(code, DiagnosticIds.NowUsedInsteadOfUtcNow);
-        }
+            ;
+        return Assert(code, DiagnosticIds.NowUsedInsteadOfUtcNow);
     }
 }

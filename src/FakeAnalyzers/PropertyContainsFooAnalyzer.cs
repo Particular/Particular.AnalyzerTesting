@@ -1,36 +1,35 @@
-﻿namespace FakeAnalyzers
+﻿namespace FakeAnalyzers;
+
+using System;
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public class PropertyContainsFooAnalyzer : DiagnosticAnalyzer
 {
-    using System;
-    using System.Collections.Immutable;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Microsoft.CodeAnalysis.Diagnostics;
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [DiagnosticDescriptors.PropertyContainsFoo];
 
-    [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class PropertyContainsFooAnalyzer : DiagnosticAnalyzer
+    public override void Initialize(AnalysisContext context)
     {
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [DiagnosticDescriptors.PropertyContainsFoo];
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.EnableConcurrentExecution();
+        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.PropertyDeclaration);
+    }
 
-        public override void Initialize(AnalysisContext context)
+    static void Analyze(SyntaxNodeAnalysisContext context)
+    {
+        if (context.Node is not PropertyDeclarationSyntax propSyntax)
         {
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-            context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.PropertyDeclaration);
+            return;
         }
 
-        static void Analyze(SyntaxNodeAnalysisContext context)
+        if (propSyntax.Identifier.Text.Contains("Foo", StringComparison.OrdinalIgnoreCase))
         {
-            if (context.Node is not PropertyDeclarationSyntax propSyntax)
-            {
-                return;
-            }
-
-            if (propSyntax.Identifier.Text.Contains("Foo", StringComparison.OrdinalIgnoreCase))
-            {
-                var diagnostic = Diagnostic.Create(DiagnosticDescriptors.PropertyContainsFoo, propSyntax.Identifier.GetLocation(), propSyntax.Identifier.Text);
-                context.ReportDiagnostic(diagnostic);
-            }
+            var diagnostic = Diagnostic.Create(DiagnosticDescriptors.PropertyContainsFoo, propSyntax.Identifier.GetLocation(), propSyntax.Identifier.Text);
+            context.ReportDiagnostic(diagnostic);
         }
     }
 }
