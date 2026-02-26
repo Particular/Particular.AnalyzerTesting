@@ -1,6 +1,6 @@
-namespace Particular.Analyzers.Tests;
+namespace Tests;
 
-using AnalyzerTesting;
+using Particular.AnalyzerTesting;
 using NUnit.Framework;
 
 public class MarkupSplitterTests

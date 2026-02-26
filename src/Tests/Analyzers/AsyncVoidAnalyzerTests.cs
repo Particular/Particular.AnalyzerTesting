@@ -1,7 +1,8 @@
-﻿namespace Particular.Analyzers.Tests
+﻿namespace Tests
 {
     using System.Threading.Tasks;
-    using AnalyzerTesting;
+    using Particular.AnalyzerTesting;
+    using FakeAnalyzers;
     using NUnit.Framework;
 
     public class AsyncVoidAnalyzerTests : AnalyzerTestFixture<AsyncVoidAnalyzer>

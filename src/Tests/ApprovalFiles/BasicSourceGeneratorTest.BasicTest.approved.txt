@@ -1,4 +1,4 @@
-// == FakeAnalyzers/Particular.Analyzers.SimpleSourceGenerator/MarkedItemsInComment.g.cs ===============================
+// == FakeAnalyzers/FakeAnalyzers.SimpleSourceGenerator/MarkedItemsInComment.g.cs ======================================
 // Marked Items:
 //   - Hello
 //   - there

@@ -1,11 +1,10 @@
-﻿namespace Particular.Analyzers
+﻿namespace FakeAnalyzers
 {
     using System.Collections.Immutable;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Diagnostics;
-    using Particular.Analyzers.Extensions;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class DateTimeNowAnalyzer : DiagnosticAnalyzer
@@ -40,7 +39,8 @@
 
             if (value is "DateTime" or "DateTimeOffset")
             {
-                context.ReportDiagnostic(DiagnosticDescriptors.NowUsedInsteadOfUtcNow, memberAccess, value);
+                var diagnostic = Diagnostic.Create(DiagnosticDescriptors.NowUsedInsteadOfUtcNow, memberAccess.GetLocation(), value);
+                context.ReportDiagnostic(diagnostic);
             }
         }
     }

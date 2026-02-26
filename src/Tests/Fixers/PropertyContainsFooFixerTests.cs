@@ -1,8 +1,9 @@
 namespace Tests.Fixers;
 
 using System.Threading.Tasks;
+using FakeAnalyzers;
+using FakeFixes;
 using NUnit.Framework;
-using Particular.Analyzers;
 using Particular.AnalyzerTesting;
 
 public class PropertyContainsFooFixerTests

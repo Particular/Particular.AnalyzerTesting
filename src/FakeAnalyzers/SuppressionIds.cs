@@ -1,4 +1,4 @@
-﻿namespace Particular.Analyzers
+﻿namespace FakeAnalyzers
 {
     public static class SuppressionIds
     {

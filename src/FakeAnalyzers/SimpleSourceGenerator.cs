@@ -1,4 +1,4 @@
-namespace Particular.Analyzers;
+namespace FakeAnalyzers;
 
 using System.Text;
 using System.Threading;

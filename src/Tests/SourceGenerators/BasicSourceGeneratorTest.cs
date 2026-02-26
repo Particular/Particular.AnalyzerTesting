@@ -1,8 +1,8 @@
 namespace Tests.SourceGenerators;
 
 using System.Threading.Tasks;
+using FakeAnalyzers;
 using NUnit.Framework;
-using Particular.Analyzers;
 using Particular.AnalyzerTesting;
 
 public class BasicSourceGeneratorTest

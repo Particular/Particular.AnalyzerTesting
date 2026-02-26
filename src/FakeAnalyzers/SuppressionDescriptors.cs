@@ -1,4 +1,4 @@
-﻿namespace Particular.Analyzers
+﻿namespace FakeAnalyzers
 {
     using Microsoft.CodeAnalysis;
 

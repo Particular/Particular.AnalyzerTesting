@@ -1,4 +1,4 @@
-﻿namespace Particular.Analyzers
+﻿namespace FakeAnalyzers
 {
     using System;
     using System.Collections.Immutable;
@@ -6,7 +6,6 @@
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Diagnostics;
-    using Particular.Analyzers.Extensions;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class PropertyContainsFooAnalyzer : DiagnosticAnalyzer
@@ -29,7 +28,8 @@
 
             if (propSyntax.Identifier.Text.Contains("Foo", StringComparison.OrdinalIgnoreCase))
             {
-                context.ReportDiagnostic(DiagnosticDescriptors.PropertyContainsFoo, propSyntax.Identifier, propSyntax.Identifier.Text);
+                var diagnostic = Diagnostic.Create(DiagnosticDescriptors.PropertyContainsFoo, propSyntax.Identifier.GetLocation(), propSyntax.Identifier.Text);
+                context.ReportDiagnostic(diagnostic);
             }
         }
     }

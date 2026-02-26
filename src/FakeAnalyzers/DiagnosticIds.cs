@@ -1,4 +1,4 @@
-﻿namespace Particular.Analyzers;
+﻿namespace FakeAnalyzers;
 
 #if FIXES
 static class DiagnosticIds

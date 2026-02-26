@@ -1,8 +1,9 @@
-namespace Particular.Analyzers.Tests;
+namespace Tests;
 
 using System;
 using System.Threading.Tasks;
-using AnalyzerTesting;
+using Particular.AnalyzerTesting;
+using FakeAnalyzers;
 using Microsoft.CodeAnalysis;
 using NUnit.Framework;
 
