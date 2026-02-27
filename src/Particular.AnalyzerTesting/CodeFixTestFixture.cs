@@ -16,9 +16,9 @@ public abstract class CodeFixTestFixture<TAnalyzer, TCodeFix>
     where TCodeFix : CodeFixProvider, new()
 {
     /// <summary>
-    /// Override in a test fixture to change the LanguageVersion used to compile the tests.
+    /// The C# version used to compile the test code, defaulting to the latest supported version for the Roslyn API you are using. Override to use a different version. />.
     /// </summary>
-    public virtual LanguageVersion AnalyzerLanguageVersion { get; } = LanguageVersion.CSharp14;
+    public virtual LanguageVersion AnalyzerLanguageVersion { get; } = LanguageVersion.Default;
 
     /// <summary>
     /// Override in a test fixture to apply configuration to every test in the fixture.

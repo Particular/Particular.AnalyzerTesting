@@ -7,8 +7,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Package needs to stay on 5.0.x to ensure we run on the 10.0.10x SDK and Visual Studio 18.0 -->
-    <RoslynPackageVersion>5.0.0</RoslynPackageVersion>
+    <RoslynPackageVersion>4.14.0</RoslynPackageVersion>
   </PropertyGroup>
 
 </Project>

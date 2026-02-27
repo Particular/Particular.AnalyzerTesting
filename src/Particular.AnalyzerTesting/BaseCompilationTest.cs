@@ -40,9 +40,9 @@ public abstract class BaseCompilationTest<TSelf> where TSelf : BaseCompilationTe
     public List<MetadataReference> References { get; } = [];
 
     /// <summary>
-    /// The C# version used to compile the test code. Set with <see cref="WithLangVersion" />.
+    /// The C# version used to compile the test code, defaulting to the latest supported version for the Roslyn API you are using. Set with <see cref="WithLangVersion" />.
     /// </summary>
-    public LanguageVersion LangVersion { get; private set; } = LanguageVersion.CSharp14;
+    public LanguageVersion LangVersion { get; private set; } = LanguageVersion.Default;
 
     /// <summary>
     /// Add a Roslyn analyzer to the test.
