@@ -1,5 +1,3 @@
 exclusions:
 - LICENSE.md
-- src/NServiceBus.snk
-- src/NServiceBusTests.snk
 - Package-README.md
