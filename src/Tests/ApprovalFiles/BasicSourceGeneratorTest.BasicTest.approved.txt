@@ -1,4 +1,10 @@
+// == Compilation Diagnostics ==========================================================================================
+FakeAnalyzers/FakeAnalyzers.SimpleSourceGenerator/MarkedItemsInComment.g.cs(2,1): hidden CS8019: Unnecessary using directive.
+
 // == FakeAnalyzers/FakeAnalyzers.SimpleSourceGenerator/MarkedItemsInComment.g.cs ======================================
+// Unnecessary using to generate CS8019 diagnostic and ensure diagnostic output slashes are always / and not \
+using System;
+
 // Marked Items:
 //   - Hello
 //   - there

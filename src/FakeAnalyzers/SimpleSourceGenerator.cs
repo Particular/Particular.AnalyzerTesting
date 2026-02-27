@@ -23,6 +23,9 @@ public class SimpleSourceGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(collected, static (productionContext, spec) =>
         {
             var b = new StringBuilder()
+                .AppendLine("// Unnecessary using to generate CS8019 diagnostic and ensure diagnostic output slashes are always / and not \\")
+                .AppendLine("using System;")
+                .AppendLine()
                 .AppendLine("// Marked Items:");
 
             foreach (var item in spec)

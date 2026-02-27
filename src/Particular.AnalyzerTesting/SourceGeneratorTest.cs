@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
@@ -33,6 +34,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
     readonly Dictionary<string, HashSet<string>> generatorStages = [];
     bool suppressDiagnosticErrors;
 
+    static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     static readonly Type WrapperType = typeof(ISourceGenerator).Assembly.GetType("Microsoft.CodeAnalysis.IncrementalGeneratorWrapper", throwOnError: true)!;
     static readonly MethodInfo GeneratorPropertyGetter = WrapperType.GetProperty("Generator", BindingFlags.Instance | BindingFlags.NonPublic)!.GetMethod!;
     static Action<SourceGeneratorTest>? configureAllTests;
@@ -318,7 +320,8 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
             WriteHeading("Generator Diagnostics");
             foreach (var diagnostic in build.GeneratorDiagnostics)
             {
-                _ = sb.AppendLine(diagnostic.ToString());
+                var diagnosticString = IsWindows ? diagnostic.ToString().Replace("\\", "/") : diagnostic.ToString();
+                _ = sb.AppendLine(diagnosticString);
             }
         }
 
@@ -327,7 +330,8 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
             WriteHeading("Compilation Diagnostics");
             foreach (var diagnostic in compilationDiagnostics)
             {
-                _ = sb.AppendLine(diagnostic.ToString());
+                var diagnosticString = IsWindows ? diagnostic.ToString().Replace("\\", "/") : diagnostic.ToString();
+                _ = sb.AppendLine(diagnosticString);
             }
         }
 
