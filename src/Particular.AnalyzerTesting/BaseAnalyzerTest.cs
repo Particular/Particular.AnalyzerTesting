@@ -175,7 +175,7 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
 
             foreach (var (line, index) in lines)
             {
-                TestContext.Out.WriteLine(string.Format(format, index + 1, line));
+                TestContext.Out.WriteLine(format, index + 1, line);
             }
         }
     }
