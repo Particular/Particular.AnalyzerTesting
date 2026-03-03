@@ -65,11 +65,7 @@ public sealed class AnalyzerTest : BaseAnalyzerTest<AnalyzerTest>
         var project = CreateProject(codeSources);
         _ = await GetCompilerDiagnostics(project, cancellationToken);
 
-        var compilation = await project.GetCompilationAsync(cancellationToken);
-        if (compilation is null)
-        {
-            throw new Exception("Result of project compilation is null");
-        }
+        var compilation = await project.GetCompilationAsync(cancellationToken) ?? throw new Exception("Result of project compilation is null");
         compilation.Compile(!suppressCompilationErrors);
 
         var analyzerDiagnostics = await GetAnalyzerDiagnostics(compilation, ignoreDiagnosticIds, cancellationToken);
