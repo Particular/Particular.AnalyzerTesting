@@ -10,9 +10,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 public class AnalyzerTestFixture<TAnalyzer> where TAnalyzer : DiagnosticAnalyzer, new()
 {
     /// <summary>
-    /// The C# version used to compile the test code, defaulting to the latest supported version for the Roslyn API you are using. Override to use a different version.
+    /// The C# version used to compile the test code, defaulting to the highest version for the Roslyn SDK you are using in the test. Override to use a different version.
     /// </summary>
-    protected virtual LanguageVersion AnalyzerLanguageVersion { get; } = LanguageVersion.Default;
+    protected virtual LanguageVersion AnalyzerLanguageVersion { get; init; } = LangVersionHelper.LatestForCurrentRoslynSdk;
 
     /// <summary>
     /// Override in a test fixture to apply configuration to every test in the fixture.
