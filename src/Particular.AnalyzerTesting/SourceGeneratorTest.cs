@@ -40,10 +40,8 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
     static Action<SourceGeneratorTest>? configureAllTests;
 
     SourceGeneratorTest(string? outputAssemblyName = null)
-        : base(outputAssemblyName)
-    {
+        : base(outputAssemblyName) =>
         configureAllTests?.Invoke(this);
-    }
 
     /// <summary>
     /// Configures all source generator tests in the project by storing a configuration action in a static variable.
@@ -114,7 +112,6 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
     /// </summary>
     public SourceGeneratorTest WithSuppressor<TSuppressor>() where TSuppressor : DiagnosticSuppressor, new()
     {
-        // TODO: Suppressors in analyzer tests?
         suppressors.Add(new TSuppressor());
         return this;
     }
@@ -320,7 +317,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
             WriteHeading("Generator Diagnostics");
             foreach (var diagnostic in build.GeneratorDiagnostics)
             {
-                var diagnosticString = IsWindows ? diagnostic.ToString().Replace("\\", "/") : diagnostic.ToString();
+                var diagnosticString = NormalizeDiagnosticString(diagnostic);
                 _ = sb.AppendLine(diagnosticString);
             }
         }
@@ -330,7 +327,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
             WriteHeading("Compilation Diagnostics");
             foreach (var diagnostic in compilationDiagnostics)
             {
-                var diagnosticString = IsWindows ? diagnostic.ToString().Replace("\\", "/") : diagnostic.ToString();
+                var diagnosticString = NormalizeDiagnosticString(diagnostic);
                 _ = sb.AppendLine(diagnosticString);
             }
         }
@@ -355,6 +352,16 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         }
 
         return sb.ToString().TrimEnd();
+    }
+
+    static string NormalizeDiagnosticString(Diagnostic diagnostic)
+    {
+        var diagnosticString = diagnostic.ToString();
+        return IsWindows switch
+        {
+            true => diagnosticString.Replace("\\", "/"),
+            _ => diagnosticString
+        };
     }
 
     /// <summary>
@@ -420,7 +427,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         if (AnalyzerTestFixtureState.VerboseLogging)
         {
             var output = GetCompilationOutput(true);
-            Console.WriteLine(output);
+            TestContext.Out.WriteLine(output);
             wroteToConsole = true;
         }
 
@@ -437,8 +444,8 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         foreach (var result in clonedBuild.RunResult.Results)
         {
             var generatorType = GetUnderlyingGeneratorType(result.Generator);
-            Console.WriteLine($"## {generatorType.Name} Results");
-            Console.WriteLine();
+            TestContext.Out.WriteLine($"## {generatorType.Name} Results");
+            TestContext.Out.WriteLine();
 
             foreach (var stepName in specificStages.Length != 0 ? specificStages : generatorStages[generatorType.FullName!].ToArray())
             {
@@ -449,14 +456,14 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
                     .Select(g => $"{g.Count()} {g.Key}")
                     .ToArray();
 
-                Console.WriteLine($"Step {stepName} -  {outputCount} total outputs, {string.Join(", ", reasons)}");
+                TestContext.Out.WriteLine($"Step {stepName} -  {outputCount} total outputs, {string.Join(", ", reasons)}");
 
                 foreach (var output in outputs)
                 {
-                    Console.WriteLine($"- [{output.Reason}] {output.Value}");
+                    TestContext.Out.WriteLine($"- [{output.Reason}] {output.Value}");
                 }
 
-                Console.WriteLine();
+                TestContext.Out.WriteLine();
             }
         }
 
@@ -514,21 +521,18 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         return false;
     }
 
-    IEnumerable<SyntaxTree> FilteredSyntaxTrees()
-    {
-        if (build is null)
+    IEnumerable<SyntaxTree> FilteredSyntaxTrees() =>
+        build switch
         {
-            throw new Exception("This shouldn't have happened yet.");
-        }
-
-        return outputType switch
-        {
-            GeneratorTestOutput.All => build.OutputCompilation.Compilation.SyntaxTrees,
-            GeneratorTestOutput.GeneratedOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => t.FilePath.EndsWith(".g.cs")),
-            GeneratorTestOutput.SourceOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => !t.FilePath.EndsWith(".g.cs")),
-            _ => throw new ArgumentOutOfRangeException()
+            null => throw new Exception("This shouldn't have happened yet."),
+            _ => outputType switch
+            {
+                GeneratorTestOutput.All => build.OutputCompilation.Compilation.SyntaxTrees,
+                GeneratorTestOutput.GeneratedOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => t.FilePath.EndsWith(".g.cs")),
+                GeneratorTestOutput.SourceOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => !t.FilePath.EndsWith(".g.cs")),
+                _ => throw new ArgumentOutOfRangeException()
+            }
         };
-    }
 
     class Build
     {

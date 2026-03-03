@@ -16,10 +16,8 @@ public sealed class AnalyzerTest : BaseAnalyzerTest<AnalyzerTest>
     static Action<AnalyzerTest>? configureAllTests;
 
     AnalyzerTest(string? outputAssemblyName = null)
-        : base(outputAssemblyName)
-    {
+        : base(outputAssemblyName) =>
         configureAllTests?.Invoke(this);
-    }
 
     /// <summary>
     /// Configures all analyzer tests (including those built using <see cref="AnalyzerTest" /> and <see cref="AnalyzerTestFixture&lt;TAnalyzer&gt;" />
@@ -65,11 +63,7 @@ public sealed class AnalyzerTest : BaseAnalyzerTest<AnalyzerTest>
         var project = CreateProject(codeSources);
         _ = await GetCompilerDiagnostics(project, cancellationToken);
 
-        var compilation = await project.GetCompilationAsync(cancellationToken);
-        if (compilation is null)
-        {
-            throw new Exception("Result of project compilation is null");
-        }
+        var compilation = await project.GetCompilationAsync(cancellationToken) ?? throw new Exception("Result of project compilation is null");
         compilation.Compile(!suppressCompilationErrors);
 
         var analyzerDiagnostics = await GetAnalyzerDiagnostics(compilation, ignoreDiagnosticIds, cancellationToken);
