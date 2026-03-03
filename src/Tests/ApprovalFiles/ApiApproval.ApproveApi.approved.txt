@@ -14,7 +14,7 @@ namespace Particular.AnalyzerTesting
         where TAnalyzer : Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer, new ()
     {
         public AnalyzerTestFixture() { }
-        public virtual Microsoft.CodeAnalysis.CSharp.LanguageVersion AnalyzerLanguageVersion { get; }
+        protected virtual Microsoft.CodeAnalysis.CSharp.LanguageVersion AnalyzerLanguageVersion { get; }
         protected System.Threading.Tasks.Task Assert(string markupCode) { }
         protected System.Threading.Tasks.Task Assert(string markupCode, string expectedDiagnosticId) { }
         protected System.Threading.Tasks.Task Assert(string markupCode, string[] expectedDiagnosticIds) { }
@@ -57,7 +57,7 @@ namespace Particular.AnalyzerTesting
         where TCodeFix : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider, new ()
     {
         protected CodeFixTestFixture() { }
-        public virtual Microsoft.CodeAnalysis.CSharp.LanguageVersion AnalyzerLanguageVersion { get; }
+        protected virtual Microsoft.CodeAnalysis.CSharp.LanguageVersion AnalyzerLanguageVersion { get; }
         protected System.Threading.Tasks.Task Assert(string original, string expected, bool mustCompile = true) { }
         protected virtual void ConfigureFixtureTests(Particular.AnalyzerTesting.CodeFixTest test) { }
     }

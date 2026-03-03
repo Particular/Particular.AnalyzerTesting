@@ -12,7 +12,7 @@ public class AnalyzerTestFixture<TAnalyzer> where TAnalyzer : DiagnosticAnalyzer
     /// <summary>
     /// The C# version used to compile the test code, defaulting to the latest supported version for the Roslyn API you are using. Override to use a different version.
     /// </summary>
-    public virtual LanguageVersion AnalyzerLanguageVersion { get; } = LanguageVersion.Default;
+    protected virtual LanguageVersion AnalyzerLanguageVersion { get; } = LanguageVersion.Default;
 
     /// <summary>
     /// Override in a test fixture to apply configuration to every test in the fixture.
