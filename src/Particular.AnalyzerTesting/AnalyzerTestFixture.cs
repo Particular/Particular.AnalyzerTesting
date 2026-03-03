@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 public class AnalyzerTestFixture<TAnalyzer> where TAnalyzer : DiagnosticAnalyzer, new()
 {
     /// <summary>
-    /// The C# version used to compile the test code, defaulting to the latest supported version for the Roslyn API you are using. Override to use a different version. />.
+    /// The C# version used to compile the test code, defaulting to the latest supported version for the Roslyn API you are using. Override to use a different version.
     /// </summary>
     public virtual LanguageVersion AnalyzerLanguageVersion { get; } = LanguageVersion.Default;
 
