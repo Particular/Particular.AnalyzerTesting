@@ -320,7 +320,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
             WriteHeading("Generator Diagnostics");
             foreach (var diagnostic in build.GeneratorDiagnostics)
             {
-                var diagnosticString = IsWindows ? diagnostic.ToString().Replace("\\", "/") : diagnostic.ToString();
+                var diagnosticString = NormalizeDiagnosticString(diagnostic);
                 _ = sb.AppendLine(diagnosticString);
             }
         }
@@ -330,7 +330,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
             WriteHeading("Compilation Diagnostics");
             foreach (var diagnostic in compilationDiagnostics)
             {
-                var diagnosticString = IsWindows ? diagnostic.ToString().Replace("\\", "/") : diagnostic.ToString();
+                var diagnosticString = NormalizeDiagnosticString(diagnostic);
                 _ = sb.AppendLine(diagnosticString);
             }
         }
@@ -355,6 +355,16 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         }
 
         return sb.ToString().TrimEnd();
+    }
+
+    static string NormalizeDiagnosticString(Diagnostic diagnostic)
+    {
+        var diagnosticString = diagnostic.ToString();
+        return IsWindows switch
+        {
+            true => diagnosticString.Replace("\\", "/"),
+            _ => diagnosticString
+        };
     }
 
     /// <summary>
