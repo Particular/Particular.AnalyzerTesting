@@ -120,7 +120,13 @@ public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
                 var firstAction = documentActions.First();
 
                 var operations = await firstAction.Action.GetOperationsAsync(cancellationToken);
-                var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+                var applyChangesOperations = operations.OfType<ApplyChangesOperation>().ToArray();
+                if (applyChangesOperations.Length != 1)
+                {
+                    throw new InvalidOperationException($"Expected exactly one {nameof(ApplyChangesOperation)} for action '{firstAction.Action.Title}' on document '{projectDocument.Name}', but found {applyChangesOperations.Length}.");
+                }
+
+                var solution = applyChangesOperations[0].ChangedSolution;
                 document = solution.GetDocument(document.Id);
 
                 if (document is not null)
