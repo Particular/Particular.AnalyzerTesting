@@ -88,9 +88,20 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
     /// </summary>
     public SourceGeneratorTest WithIncrementalGenerator<TGenerator>(params string[] stages) where TGenerator : IIncrementalGenerator, new()
     {
-        if (stages.Length == 0 && TryGetTrackingNames(typeof(TGenerator), out var trackingNames))
+        if (stages.Length == 0)
         {
-            stages = [.. trackingNames];
+            if (TryGetTrackingNames(typeof(TGenerator), out var trackingNames))
+            {
+                stages = [.. trackingNames];
+            }
+            else
+            {
+                throw new Exception("""
+                                    To test an incremental generator, either:
+                                      1. Provide explicit tracking stage names to the `stages` parameter of WithIncrementalGenerator<TGenerator> that are unique to the specific test.
+                                      2. The source generator should have an `internal static class TrackingNames` that the test can discover via reflection, where each stage name is identified by a `public const string`, and there is a property `public static string[] All => [Stage1, Stage2]` that returns all stage names. 
+                                    """);
+            }
         }
 
         generatorStages.Add(typeof(TGenerator).FullName!, new HashSet<string>(stages, StringComparer.OrdinalIgnoreCase));
