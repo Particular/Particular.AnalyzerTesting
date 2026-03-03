@@ -112,7 +112,6 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
     /// </summary>
     public SourceGeneratorTest WithSuppressor<TSuppressor>() where TSuppressor : DiagnosticSuppressor, new()
     {
-        // TODO: Suppressors in analyzer tests?
         suppressors.Add(new TSuppressor());
         return this;
     }
