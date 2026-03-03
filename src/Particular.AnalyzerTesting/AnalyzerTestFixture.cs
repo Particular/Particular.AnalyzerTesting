@@ -1,5 +1,6 @@
 ﻿namespace Particular.AnalyzerTesting;
 
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -21,34 +22,30 @@ public class AnalyzerTestFixture<TAnalyzer> where TAnalyzer : DiagnosticAnalyzer
     protected virtual void ConfigureFixtureTests(AnalyzerTest test) { }
 
     /// <summary>
-    /// Assert that the code does not raise any diagnostics.
+    /// Assert that the code raises the expected diagnostic in the locations specified by the [|…|] markup, or raises no diagnostics
+    /// if the <c>expectedDiagnsoticId</c> is null.
     /// </summary>
-    protected Task Assert(string markupCode) =>
-        Assert(markupCode, [], [], true);
+    protected Task Assert(string markupCode, string? expectedDiagnosticId = null, [CallerMemberName] string? outputAssemblyName = null)
+        => Assert(markupCode, expectedDiagnosticId is null ? [] : [expectedDiagnosticId], [], true, outputAssemblyName);
 
     /// <summary>
     /// Assert that the code raises the expected diagnostic in the locations specified by the [|…|] markup.
     /// </summary>
-    protected Task Assert(string markupCode, string expectedDiagnosticId) =>
-        Assert(markupCode, [expectedDiagnosticId], [], true);
+    protected Task Assert(string markupCode, string[] expectedDiagnosticIds, [CallerMemberName] string? outputAssemblyName = null)
+        => Assert(markupCode, expectedDiagnosticIds, [], true, outputAssemblyName);
 
     /// <summary>
     /// Assert that the code raises the expected diagnostic in the locations specified by the [|…|] markup.
     /// </summary>
-    protected Task Assert(string markupCode, string[] expectedDiagnosticIds) => Assert(markupCode, expectedDiagnosticIds, [], true);
+    protected Task Assert(string markupCode, string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds, [CallerMemberName] string? outputAssemblyName = null)
+        => Assert(markupCode, expectedDiagnosticIds, ignoreDiagnosticIds, true, outputAssemblyName);
 
     /// <summary>
     /// Assert that the code raises the expected diagnostic in the locations specified by the [|…|] markup.
     /// </summary>
-    protected Task Assert(string markupCode, string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds)
-        => Assert(markupCode, expectedDiagnosticIds, ignoreDiagnosticIds, true);
-
-    /// <summary>
-    /// Assert that the code raises the expected diagnostic in the locations specified by the [|…|] markup.
-    /// </summary>
-    protected Task Assert(string markupCode, string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds, bool mustCompile)
+    protected Task Assert(string markupCode, string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds, bool mustCompile, [CallerMemberName] string? outputAssemblyName = null)
     {
-        var test = AnalyzerTest.ForAnalyzer<TAnalyzer>("TestProject")
+        var test = AnalyzerTest.ForAnalyzer<TAnalyzer>(outputAssemblyName ?? "TestProject")
             .WithLangVersion(AnalyzerLanguageVersion);
 
         if (!mustCompile)
