@@ -524,21 +524,18 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         return false;
     }
 
-    IEnumerable<SyntaxTree> FilteredSyntaxTrees()
-    {
-        if (build is null)
+    IEnumerable<SyntaxTree> FilteredSyntaxTrees() =>
+        build switch
         {
-            throw new Exception("This shouldn't have happened yet.");
-        }
-
-        return outputType switch
-        {
-            GeneratorTestOutput.All => build.OutputCompilation.Compilation.SyntaxTrees,
-            GeneratorTestOutput.GeneratedOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => t.FilePath.EndsWith(".g.cs")),
-            GeneratorTestOutput.SourceOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => !t.FilePath.EndsWith(".g.cs")),
-            _ => throw new ArgumentOutOfRangeException()
+            null => throw new Exception("This shouldn't have happened yet."),
+            _ => outputType switch
+            {
+                GeneratorTestOutput.All => build.OutputCompilation.Compilation.SyntaxTrees,
+                GeneratorTestOutput.GeneratedOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => t.FilePath.EndsWith(".g.cs")),
+                GeneratorTestOutput.SourceOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => !t.FilePath.EndsWith(".g.cs")),
+                _ => throw new ArgumentOutOfRangeException()
+            }
         };
-    }
 
     class Build
     {
