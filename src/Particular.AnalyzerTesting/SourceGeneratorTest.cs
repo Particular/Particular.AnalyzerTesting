@@ -430,7 +430,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         if (AnalyzerTestFixtureState.VerboseLogging)
         {
             var output = GetCompilationOutput(true);
-            Console.WriteLine(output);
+            TestContext.Out.WriteLine(output);
             wroteToConsole = true;
         }
 
@@ -447,8 +447,8 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         foreach (var result in clonedBuild.RunResult.Results)
         {
             var generatorType = GetUnderlyingGeneratorType(result.Generator);
-            Console.WriteLine($"## {generatorType.Name} Results");
-            Console.WriteLine();
+            TestContext.Out.WriteLine($"## {generatorType.Name} Results");
+            TestContext.Out.WriteLine();
 
             foreach (var stepName in specificStages.Length != 0 ? specificStages : generatorStages[generatorType.FullName!].ToArray())
             {
@@ -459,14 +459,14 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
                     .Select(g => $"{g.Count()} {g.Key}")
                     .ToArray();
 
-                Console.WriteLine($"Step {stepName} -  {outputCount} total outputs, {string.Join(", ", reasons)}");
+                TestContext.Out.WriteLine($"Step {stepName} -  {outputCount} total outputs, {string.Join(", ", reasons)}");
 
                 foreach (var output in outputs)
                 {
-                    Console.WriteLine($"- [{output.Reason}] {output.Value}");
+                    TestContext.Out.WriteLine($"- [{output.Reason}] {output.Value}");
                 }
 
-                Console.WriteLine();
+                TestContext.Out.WriteLine();
             }
         }
 
