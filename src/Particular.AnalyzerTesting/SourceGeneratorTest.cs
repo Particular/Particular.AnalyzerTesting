@@ -40,10 +40,8 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
     static Action<SourceGeneratorTest>? configureAllTests;
 
     SourceGeneratorTest(string? outputAssemblyName = null)
-        : base(outputAssemblyName)
-    {
+        : base(outputAssemblyName) =>
         configureAllTests?.Invoke(this);
-    }
 
     /// <summary>
     /// Configures all source generator tests in the project by storing a configuration action in a static variable.
