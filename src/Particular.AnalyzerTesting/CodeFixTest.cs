@@ -108,11 +108,20 @@ public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
             foreach (var projectDocument in project.Documents)
             {
                 var document = projectDocument;
-                var firstAction = actionsByDocumentName[document.Name].First();
+                (Document Document, CodeAction Action)[] documentActions = [.. actionsByDocumentName[document.Name]];
+
+                if (!documentActions.Any())
+                {
+                    var originalCode = await document.GetTextAsync(cancellationToken);
+                    updatedSources.Add(new(projectDocument.Name, originalCode.ToString(), []));
+                    continue;
+                }
+
+                var firstAction = documentActions.First();
 
                 var operations = await firstAction.Action.GetOperationsAsync(cancellationToken);
                 var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
-                document = solution.GetDocument(document!.Id);
+                document = solution.GetDocument(document.Id);
 
                 if (document is not null)
                 {
@@ -128,8 +137,8 @@ public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
         foreach (var expectedSource in expectedResults)
         {
             var updated = updatedSourcesByFilename.GetValueOrDefault(expectedSource.Filename);
-            NUnit.Framework.Assert.That(updated, Is.Not.Null, $"No updated code for source filename {expectedSource.Filename}");
-            NUnit.Framework.Assert.That(updated!.Source, Is.EqualTo(expectedSource.Source).IgnoreLineEndingFormat);
+            Assert.That(updated, Is.Not.Null, $"No updated code for source filename {expectedSource.Filename}");
+            Assert.That(updated!.Source, Is.EqualTo(expectedSource.Source).IgnoreLineEndingFormat);
         }
     }
 
