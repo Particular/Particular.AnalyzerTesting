@@ -1,6 +1,7 @@
 ﻿namespace Particular.AnalyzerTesting;
 
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
@@ -16,9 +17,9 @@ public abstract class CodeFixTestFixture<TAnalyzer, TCodeFix>
     where TCodeFix : CodeFixProvider, new()
 {
     /// <summary>
-    /// The C# version used to compile the test code, defaulting to the latest supported version for the Roslyn API you are using. Override to use a different version.
+    /// The C# version used to compile the test code, defaulting to the highest version for the Roslyn SDK you are using in the test. Override to use a different version.
     /// </summary>
-    protected virtual LanguageVersion AnalyzerLanguageVersion { get; } = LanguageVersion.Default;
+    protected virtual LanguageVersion AnalyzerLanguageVersion { get; init; } = LangVersionHelper.LatestForCurrentRoslynSdk;
 
     /// <summary>
     /// Override in a test fixture to apply configuration to every test in the fixture.
@@ -29,14 +30,14 @@ public abstract class CodeFixTestFixture<TAnalyzer, TCodeFix>
     /// <summary>
     /// Assert that the code fix applied to the original code creates the expected output.
     /// </summary>
-    protected async Task Assert(string original, string expected, bool mustCompile = true)
+    protected async Task Assert(string original, string expected, bool mustCompile = true, [CallerMemberName] string? outputAssemblyName = null)
     {
         var originalFiles = MarkupSplitter.SplitMarkup(original).ToDictionary(f => f.Filename);
         var fixedFiles = MarkupSplitter.SplitMarkup(expected).ToDictionary(f => f.Filename);
 
         NUnit.Framework.Assert.That(originalFiles.Keys, Is.EquivalentTo(fixedFiles.Keys));
 
-        var test = CodeFixTest.ForAnalyzer<TAnalyzer>("TestProject")
+        var test = CodeFixTest.ForAnalyzer<TAnalyzer>(outputAssemblyName ?? "TestProject")
             .WithCodeFix<TCodeFix>()
             .WithLangVersion(AnalyzerLanguageVersion);
 

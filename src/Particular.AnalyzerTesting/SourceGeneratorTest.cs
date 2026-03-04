@@ -88,9 +88,20 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
     /// </summary>
     public SourceGeneratorTest WithIncrementalGenerator<TGenerator>(params string[] stages) where TGenerator : IIncrementalGenerator, new()
     {
-        if (stages.Length == 0 && TryGetTrackingNames(typeof(TGenerator), out var trackingNames))
+        if (stages.Length == 0)
         {
-            stages = [.. trackingNames];
+            if (TryGetTrackingNames(typeof(TGenerator), out var trackingNames))
+            {
+                stages = [.. trackingNames];
+            }
+            else
+            {
+                throw new Exception("""
+                                    To test an incremental generator, either:
+                                      1. Provide explicit tracking stage names to the `stages` parameter of WithIncrementalGenerator<TGenerator> that are unique to the specific test.
+                                      2. The source generator should have an `internal static class TrackingNames` that the test can discover via reflection, where each stage name is identified by a `public const string`, and there is a property `public static string[] All => [Stage1, Stage2]` that returns all stage names. 
+                                    """);
+            }
         }
 
         generatorStages.Add(typeof(TGenerator).FullName!, new HashSet<string>(stages, StringComparer.OrdinalIgnoreCase));
@@ -315,7 +326,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         if (build.GeneratorDiagnostics.Any())
         {
             WriteHeading("Generator Diagnostics");
-            foreach (var diagnostic in build.GeneratorDiagnostics)
+            foreach (var diagnostic in build.GeneratorDiagnostics.Order(DiagnosticSortComparer.Instance))
             {
                 var diagnosticString = NormalizeDiagnosticString(diagnostic);
                 _ = sb.AppendLine(diagnosticString);
@@ -325,7 +336,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         if (compilationDiagnostics.Any())
         {
             WriteHeading("Compilation Diagnostics");
-            foreach (var diagnostic in compilationDiagnostics)
+            foreach (var diagnostic in compilationDiagnostics.Order(DiagnosticSortComparer.Instance))
             {
                 var diagnosticString = NormalizeDiagnosticString(diagnostic);
                 _ = sb.AppendLine(diagnosticString);
@@ -579,6 +590,88 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
 
         public override bool TryGetValue(string key, out string value)
             => properties.TryGetValue(key, out value!);
+    }
+
+    sealed class DiagnosticSortComparer : IComparer<Diagnostic>
+    {
+        public static DiagnosticSortComparer Instance { get; } = new();
+
+        public int Compare(Diagnostic? x, Diagnostic? y)
+        {
+            if (ReferenceEquals(x, y))
+            {
+                return 0;
+            }
+
+            if (x is null)
+            {
+                return -1;
+            }
+
+            if (y is null)
+            {
+                return 1;
+            }
+
+            var xLoc = x.Location;
+            var yLoc = y.Location;
+
+            var xInSource = xLoc.IsInSource;
+            var yInSource = yLoc.IsInSource;
+
+            // Always order source diagnostics before non-source diagnostics
+            var c = yInSource.CompareTo(xInSource);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            if (xInSource && yInSource)
+            {
+                var xPath = NormalizePath(xLoc!.SourceTree?.FilePath);
+                var yPath = NormalizePath(yLoc!.SourceTree?.FilePath);
+
+                c = StringComparer.Ordinal.Compare(xPath, yPath);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                var xSpan = xLoc.SourceSpan;
+                var ySpan = yLoc.SourceSpan;
+
+                c = xSpan.Start.CompareTo(ySpan.Start);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                c = xSpan.Length.CompareTo(ySpan.Length);
+                if (c != 0)
+                {
+                    return c;
+                }
+            }
+
+            c = StringComparer.Ordinal.Compare(x.Id, y.Id);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            c = x.Severity.CompareTo(y.Severity);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            c = StringComparer.Ordinal.Compare(x.GetMessage(), y.GetMessage());
+            return c != 0 ? c :
+                // Final tie-breaker for absolute stability
+                StringComparer.Ordinal.Compare(x.ToString(), y.ToString());
+
+            static string NormalizePath(string? path) => string.IsNullOrEmpty(path) ? "" : path.Replace('\\', '/');
+        }
     }
 }
 

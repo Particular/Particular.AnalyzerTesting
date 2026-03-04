@@ -48,5 +48,7 @@ public class SimpleSourceGenerator : IIncrementalGenerator
     {
         public const string MarkedItemSpecs = nameof(MarkedItemSpecs);
         public const string CollectedSpec = nameof(CollectedSpec);
+
+        public static string[] All => [MarkedItemSpecs, CollectedSpec];
     }
 }
