@@ -12,16 +12,20 @@ Tagged versions are automatically pushed to [feedz.io](https://feedz.io/org/part
 
 ## Adding to a project
 
-Add the package to your test project's `.csproj` file alongside the `Microsoft.CodeAnalysis.CSharp.Workspaces` package. Use `PrivateAssets="All"` on both references so they remain development-only dependencies and are not exposed as transitive dependencies to consumers of your project.
+Add the package to your test project's `.csproj` file alongside the `Microsoft.CodeAnalysis.CSharp.Workspaces` package.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Particular.AnalyzerTesting" Version="..." PrivateAssets="All" />
-  <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynPackageVersion)" PrivateAssets="All" />
+  <PackageReference Include="Particular.AnalyzerTesting" Version="..." />
+  <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
 </ItemGroup>
 ```
 
-The `$(RoslynPackageVersion)` MSBuild property should be defined in a `Directory.Build.props` or `Custom.Build.props` file shared by the test project(s). This indirection makes it easy to manage and update the Roslyn version in one place, and to create additional test projects that target different Roslyn versions (see [Testing multiple Roslyn versions](#testing-multiple-roslyn-versions)).
+## Testing multiple Roslyn versions
+
+Roslyn analyzers and code fixes must work correctly across all versions of Roslyn that your users may have installed. To verify this, create multiple test projects that reference the same shared test files but use different versions of `Microsoft.CodeAnalysis.CSharp.Workspaces`.
+
+Define a shared `$(RoslynPackageVersion)` property in a `Directory.Build.props` or `Custom.Build.props` file. This makes it easy to manage the minimum supported Roslyn version in one place, and to create additional test projects that target the latest Roslyn version.
 
 ```xml
 <!-- Custom.Build.props -->
@@ -32,11 +36,7 @@ The `$(RoslynPackageVersion)` MSBuild property should be defined in a `Directory
 </Project>
 ```
 
-> **Remarks:** The Roslyn version you reference in the test project determines which version of C# is supported by the analyzer during testing. The `Particular.AnalyzerTesting` package itself uses `PrivateAssets="All"` on its own Roslyn dependency, so the version used at test time is entirely controlled by the version you specify in your test project.
-
-## Testing multiple Roslyn versions
-
-Roslyn analyzers and code fixes must work correctly across all versions of Roslyn that your users may have installed. To verify this, create multiple test projects that reference the same shared test files but use different versions of `Microsoft.CodeAnalysis.CSharp.Workspaces`.
+> **Remarks:** The `Particular.AnalyzerTesting` package itself uses `PrivateAssets="All"` on its own Roslyn dependency, so the version of Roslyn used at test time is entirely controlled by the `Microsoft.CodeAnalysis.CSharp.Workspaces` version you specify in your test project.
 
 A common pattern is to have a project that uses the minimum supported Roslyn version and another that uses the most recent version:
 
@@ -57,7 +57,7 @@ The minimum-version project uses the `$(RoslynPackageVersion)` property:
 <!-- Tests.MinRoslynVersion/Tests.MinRoslynVersion.csproj -->
 <ItemGroup>
   <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynPackageVersion)" />
-  <PackageReference Include="Particular.AnalyzerTesting" Version="..." PrivateAssets="All" />
+  <PackageReference Include="Particular.AnalyzerTesting" Version="..." />
 </ItemGroup>
 
 <ItemGroup>
@@ -71,7 +71,7 @@ The current-version project pins to a specific newer Roslyn package:
 <!-- Tests.CurrentRoslynVersion/Tests.CurrentRoslynVersion.csproj -->
 <ItemGroup>
   <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
-  <PackageReference Include="Particular.AnalyzerTesting" Version="..." PrivateAssets="All" />
+  <PackageReference Include="Particular.AnalyzerTesting" Version="..." />
 </ItemGroup>
 
 <ItemGroup>
@@ -88,6 +88,18 @@ Both test projects compile and run exactly the same tests, so any behavior diffe
 `AnalyzerTestFixture<TAnalyzer>` is a base class for test fixtures that run multiple tests against the same analyzer. Inherit from it and override `ConfigureFixtureTests` to apply common setup (such as additional source files or common `using` directives) to every test in the fixture.
 
 Use `[|…|]` markup in the source code string to indicate the exact locations where the analyzer should report a diagnostic.
+
+Multiple source files can be specified in a single string by separating them with a line of 5 or more dashes (`-----`). Files can be named by putting a `// Filename.cs` comment as the first line of each section:
+
+```csharp
+const string code = """
+    // File1.cs
+    public class Foo { }
+    -----
+    // File2.cs
+    public class Bar { }
+    """;
+```
 
 ```csharp
 public class DateTimeNowAnalyzerTests : AnalyzerTestFixture<DateTimeNowAnalyzer>
@@ -164,7 +176,7 @@ public Task Simple() =>
         .AssertDiagnostics(DiagnosticIds.IdentifierContainsFoo);
 ```
 
-Multiple source files can be added with separate `WithSource` calls. Files are separated using a line of dashes (`-------`) in the markup string when using `AnalyzerTestFixture`.
+Multiple source files can be added with separate `WithSource` calls.
 
 **`AnalyzerTest` fluent methods**
 
@@ -250,7 +262,7 @@ To configure all code fix tests in a project, use `CodeFixTest.ConfigureAllCodeF
 
 Use `SourceGeneratorTest` to test incremental and non-incremental Roslyn source generators. Start with `ForIncrementalGenerator<TGenerator>()` or `ForSourceGenerator<TGenerator>()`, then chain configuration and assertion methods.
 
-The primary assertion method is `Approve()`, which uses [Particular.Approvals](https://github.com/Particular/Particular.Approvals) to snapshot-test the generated output. On the first run it creates an `.approved.txt` file; subsequent runs compare against it.
+The primary assertion method is `Approve()`, which uses [Particular.Approvals](https://github.com/Particular/Particular.Approvals) to snapshot-test the generated output. On the first run it creates a `.received.txt` file, which must be renamed to `.approved.txt` and committed. Subsequent runs compare the received file against the approved file.
 
 ```csharp
 [Test]
@@ -311,5 +323,3 @@ The following repositories contain real-world tests built with `Particular.Analy
 
 - [Particular.Analyzers](https://github.com/Particular/Particular.Analyzers/tree/master/src/SharedTests) – analyzer tests shared across multiple Roslyn version test projects
 - [NServiceBus](https://github.com/Particular/NServiceBus/tree/master/src/NServiceBus.Core.Analyzer.Tests.Roslyn5) – analyzer, code fix, and source generator tests for the NServiceBus core analyzer
-- [NServiceBus.AzureFunctions.Worker.ServiceBus](https://github.com/Particular/NServiceBus.AzureFunctions.Worker.ServiceBus/tree/master/src/NServiceBus.AzureFunctions.Worker.Analyzer.Tests) – analyzer and source generator tests for the Azure Functions transport analyzer
-- [NServiceBus.AwsLambda.Sqs](https://github.com/Particular/NServiceBus.AwsLambda.Sqs/tree/master/src/NServiceBus.AwsLambda.SQS.Analyzer.Tests) – analyzer tests for the AWS Lambda transport analyzer
