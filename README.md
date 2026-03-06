@@ -25,7 +25,7 @@ Add the package to your test project's `.csproj` file alongside the `Microsoft.C
 
 Roslyn analyzers and code fixes must work correctly across all versions of Roslyn that your users may have installed. To verify this, create multiple test projects that reference the same shared test files but use different versions of `Microsoft.CodeAnalysis.CSharp.Workspaces`.
 
-Define a shared `$(RoslynPackageVersion)` property in a `Directory.Build.props` or `Custom.Build.props` file. This makes it easy to manage the minimum supported Roslyn version in one place, and to create additional test projects that target the latest Roslyn version.
+Define a shared `$(RoslynPackageVersion)` property in the project's `src/Custom.Build.props` file. This makes it easy to manage the minimum supported Roslyn version in one place, and to create additional test projects that target the latest Roslyn version.
 
 ```xml
 <!-- Custom.Build.props -->
@@ -44,7 +44,7 @@ A common pattern is to have a project that uses the minimum supported Roslyn ver
 src/
   MyAnalyzer/
   Tests.MinRoslynVersion/
-    Tests.MinRoslynVersion.csproj   ← uses $(RoslynPackageVersion) from Directory.Build.props
+    Tests.MinRoslynVersion.csproj   ← uses $(RoslynPackageVersion)
   Tests.CurrentRoslynVersion/
     Tests.CurrentRoslynVersion.csproj  ← uses the latest Roslyn version explicitly
   SharedTests/
