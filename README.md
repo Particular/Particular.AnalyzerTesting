@@ -36,7 +36,7 @@ Define a shared `$(RoslynPackageVersion)` property in the project's `src/Custom.
 </Project>
 ```
 
-> **Remarks:** The `Particular.AnalyzerTesting` package itself uses `PrivateAssets="All"` on its own Roslyn dependency, so the version of Roslyn used at test time is entirely controlled by the `Microsoft.CodeAnalysis.CSharp.Workspaces` version you specify in your test project.
+> **Remarks:** The `Particular.AnalyzerTesting` package itself uses `PrivateAssets="All"` on its own Roslyn dependency, so the version of Roslyn used at test time is entirely controlled by the `Microsoft.CodeAnalysis.CSharp.Workspaces` version you specify in your test project. The same applies to `NUnit` and `Particular.Approvals`. 
 
 A common pattern is to have a project that uses the minimum supported Roslyn version and another that uses the most recent version:
 
