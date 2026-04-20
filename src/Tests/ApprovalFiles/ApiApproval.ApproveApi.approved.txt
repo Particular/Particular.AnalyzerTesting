@@ -68,16 +68,9 @@ namespace Particular.AnalyzerTesting
     }
     public sealed class SourceGeneratorTest : Particular.AnalyzerTesting.BaseCompilationTest<Particular.AnalyzerTesting.SourceGeneratorTest>
     {
-        public Particular.AnalyzerTesting.SourceGeneratorTest Approve(System.Func<string, string>? scrubber = null, [System.Runtime.CompilerServices.CallerFilePath] string? callerFilePath = null, [System.Runtime.CompilerServices.CallerMemberName] string? callerMemberName = null) { }
-        public Particular.AnalyzerTesting.SourceGeneratorTest AssertRunsAreEqual() { }
         public Particular.AnalyzerTesting.SourceGeneratorTest ControlOutput(Particular.AnalyzerTesting.GeneratorTestOutput output) { }
-        public string GetCompilationOutput(bool withLineNumbers = false) { }
-        public Particular.AnalyzerTesting.SourceGeneratorTest OutputSteps([System.Runtime.CompilerServices.ParamCollection] [System.Runtime.CompilerServices.ScopedRef] System.ReadOnlySpan<string> specificStages) { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("build")]
-        public Particular.AnalyzerTesting.SourceGeneratorTest Run() { }
-        public Particular.AnalyzerTesting.SourceGeneratorTest ShouldNotGenerateCode() { }
+        public Particular.AnalyzerTesting.SourceGeneratorTestResult Run() { }
         public Particular.AnalyzerTesting.SourceGeneratorTest SuppressDiagnosticErrors() { }
-        public Particular.AnalyzerTesting.SourceGeneratorTest ToConsole() { }
         public Particular.AnalyzerTesting.SourceGeneratorTest WithIncrementalGenerator<TGenerator>(params string[] stages)
             where TGenerator : Microsoft.CodeAnalysis.IIncrementalGenerator, new () { }
         public Particular.AnalyzerTesting.SourceGeneratorTest WithScenarioName(string name) { }
@@ -91,5 +84,16 @@ namespace Particular.AnalyzerTesting
             where TGenerator : Microsoft.CodeAnalysis.IIncrementalGenerator, new () { }
         public static Particular.AnalyzerTesting.SourceGeneratorTest ForSourceGenerator<TGenerator>([System.Runtime.CompilerServices.CallerMemberName] string? outputAssemblyName = null)
             where TGenerator : Microsoft.CodeAnalysis.ISourceGenerator, new () { }
+    }
+    public sealed class SourceGeneratorTestResult
+    {
+        public System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.Diagnostic> AnalyzerDiagnostics { get; }
+        public System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.Diagnostic> GeneratorDiagnostics { get; }
+        public Particular.AnalyzerTesting.SourceGeneratorTestResult Approve(System.Func<string, string>? scrubber = null, [System.Runtime.CompilerServices.CallerFilePath] string? callerFilePath = null, [System.Runtime.CompilerServices.CallerMemberName] string? callerMemberName = null) { }
+        public Particular.AnalyzerTesting.SourceGeneratorTestResult AssertRunsAreEqual() { }
+        public string GetCompilationOutput(bool withLineNumbers = false) { }
+        public Particular.AnalyzerTesting.SourceGeneratorTestResult OutputSteps([System.Runtime.CompilerServices.ParamCollection] [System.Runtime.CompilerServices.ScopedRef] System.ReadOnlySpan<string> specificStages) { }
+        public Particular.AnalyzerTesting.SourceGeneratorTestResult ShouldNotGenerateCode() { }
+        public Particular.AnalyzerTesting.SourceGeneratorTestResult ToConsole() { }
     }
 }
