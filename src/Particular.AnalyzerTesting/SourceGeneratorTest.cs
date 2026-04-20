@@ -151,7 +151,9 @@ public sealed class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTes
 
         if (generators.Count == 0)
         {
-            throw new Exception("No generators added");
+            throw new Exception(
+                "No source generators were added to the test. " +
+                "Call WithSourceGenerator<TGenerator>() or WithIncrementalGenerator<TGenerator>() before Run().");
         }
 
         var parseOptions = new CSharpParseOptions(LangVersion)
