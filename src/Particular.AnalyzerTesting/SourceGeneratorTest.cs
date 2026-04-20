@@ -205,10 +205,9 @@ public sealed class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTes
             _ = result.ToConsole();
             throw;
         }
-    }
 
-    SourceGeneratorTestResult CreateResult() =>
-        new(build!, compilationDiagnostics, scenarioName, outputType, generatorStages);
+        SourceGeneratorTestResult CreateResult() => new(build, compilationDiagnostics, scenarioName, outputType, generatorStages);
+    }
 
     internal static Type GetUnderlyingGeneratorType(ISourceGenerator generator)
     {
