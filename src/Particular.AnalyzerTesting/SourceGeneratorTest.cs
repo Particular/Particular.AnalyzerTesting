@@ -3,38 +3,30 @@ namespace Particular.AnalyzerTesting;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using NUnit.Framework;
-using Particular.Approvals;
 
 /// <summary>
 /// A tool for testing Roslyn source generators.
 /// </summary>
-public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTest>
+public sealed class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTest>
 {
     readonly List<(string Filename, string Source)> sources = [];
     readonly List<ISourceGenerator> generators = [];
     readonly List<DiagnosticSuppressor> suppressors = [];
     string? scenarioName;
     Compilation? initialCompilation;
-    Build? build;
-    Build? clonedBuild;
+    SourceGeneratorBuild? build;
     ImmutableArray<Diagnostic> compilationDiagnostics;
-    bool wroteToConsole;
     GeneratorTestOutput outputType;
     readonly Dictionary<string, HashSet<string>> generatorStages = [];
     bool suppressDiagnosticErrors;
 
-    static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     static readonly Type WrapperType = typeof(ISourceGenerator).Assembly.GetType("Microsoft.CodeAnalysis.IncrementalGeneratorWrapper", throwOnError: true)!;
     static readonly MethodInfo GeneratorPropertyGetter = WrapperType.GetProperty("Generator", BindingFlags.Instance | BindingFlags.NonPublic)!.GetMethod!;
     static Action<SourceGeneratorTest>? configureAllTests;
@@ -148,19 +140,20 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
     }
 
     /// <summary>
-    /// Run the source generator test without running an approval test on the results.
+    /// Run the source generator test and return the results.
     /// </summary>
-    [MemberNotNull(nameof(build))]
-    public SourceGeneratorTest Run()
+    public SourceGeneratorTestResult Run()
     {
         if (build is not null)
         {
-            return this;
+            return CreateResult();
         }
 
         if (generators.Count == 0)
         {
-            throw new Exception("No generators added");
+            throw new Exception(
+                "No source generators were added to the test. " +
+                "Call WithSourceGenerator<TGenerator>() or WithIncrementalGenerator<TGenerator>() before Run().");
         }
 
         var parseOptions = new CSharpParseOptions(LangVersion)
@@ -190,7 +183,7 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
 
         ImmutableArray<DiagnosticAnalyzer> analyzersToUse = analyzers.Count > 0 ? [.. analyzers] : [new NoOpAnalyzer()];
         ImmutableArray<DiagnosticSuppressor> suppressorsToUse = suppressors.Count > 0 ? [.. suppressors] : [];
-        build = new Build(initialCompilation, driver, analyzersToUse, suppressorsToUse);
+        build = new SourceGeneratorBuild(initialCompilation, driver, analyzersToUse, suppressorsToUse);
 
         try
         {
@@ -206,282 +199,19 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
                 Assert.That(compilationDiagnostics, Has.None.Matches<Diagnostic>(d => d.Severity >= DiagnosticSeverity.Warning));
             }
 
-            return this;
+            return CreateResult();
         }
         catch (AssertionException)
         {
-            _ = ToConsole();
+            var result = CreateResult();
+            _ = result.ToConsole();
             throw;
         }
+
+        SourceGeneratorTestResult CreateResult() => new(build, compilationDiagnostics, scenarioName, outputType, generatorStages);
     }
 
-    [MemberNotNull(nameof(clonedBuild)), MemberNotNull(nameof(build))]
-    void RunClonedBuild()
-    {
-        if (build is null)
-        {
-            _ = Run();
-        }
-
-        clonedBuild ??= build.Clone();
-    }
-
-    /// <summary>
-    /// Assert that duplicate runs of the source generator used cached outputs to ensure performance.
-    /// </summary>
-    public SourceGeneratorTest AssertRunsAreEqual()
-    {
-        if (generatorStages.Count == 0)
-        {
-            throw new Exception("Must add GeneratorStages first.");
-        }
-
-        RunClonedBuild();
-
-        var trackedSteps1 = GetTracked(build.RunResult);
-        var trackedSteps2 = GetTracked(clonedBuild.RunResult);
-
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(trackedSteps1, Is.Not.Empty);
-            Assert.That(trackedSteps2, Has.Count.EqualTo(trackedSteps1.Count));
-            Assert.That(trackedSteps1.Keys, Is.EquivalentTo(trackedSteps2.Keys));
-        }
-
-        foreach (var stepsPerGenerator in trackedSteps1)
-        {
-            using (Assert.EnterMultipleScope())
-            {
-                foreach ((string key, ImmutableArray<IncrementalGeneratorRunStep> runStep1) in stepsPerGenerator.Value)
-                {
-                    var runStep2 = trackedSteps2[stepsPerGenerator.Key][key];
-                    AssertStepsAreEqual(key, runStep1, runStep2);
-                }
-            }
-        }
-
-        return this;
-
-        Dictionary<string, Dictionary<string, ImmutableArray<IncrementalGeneratorRunStep>>> GetTracked(GeneratorDriverRunResult result) =>
-            result.Results.GroupBy(x => GetUnderlyingGeneratorType(x.Generator).FullName!)
-                .ToDictionary(g => g.Key, g =>
-                    g.SelectMany(r => r.TrackedSteps.Where(step => generatorStages[g.Key].Contains(step.Key))).ToDictionary());
-    }
-
-    static void AssertStepsAreEqual(string trackingName, ImmutableArray<IncrementalGeneratorRunStep> steps1, ImmutableArray<IncrementalGeneratorRunStep> steps2)
-    {
-        Assert.That(steps1, Has.Length.EqualTo(steps2.Length));
-
-        for (var i = 0; i < steps1.Length; i++)
-        {
-            var step1 = steps1[i];
-            var step2 = steps2[i];
-
-            var out1 = step1.Outputs.Select(o => o.Value).ToArray();
-            var out2 = step2.Outputs.Select(o => o.Value).ToArray();
-
-            Assert.That(out1, Is.EqualTo(out2).UsingPropertiesComparer(), $"Step '{trackingName}' outputs are not the same between runs, but should be cacheable results.");
-
-            var outputReasons = step2.Outputs.Select(o => o.Reason).ToArray();
-            var badReasons = outputReasons.Where(reason => reason is not IncrementalStepRunReason.Cached and not IncrementalStepRunReason.Unchanged).ToArray();
-
-            Assert.That(badReasons.Length, Is.Zero, $"Step '{trackingName}' outputs contain reasons: {string.Join(',', badReasons)}. Should all be Cached or Unchanged to be memoizable.");
-
-            // Not doing anything here to explicitly assert that types are not Compilation, ISymbol, SyntaxNode or other
-            // types known to be bad ideas, but that would require nasty reflection to traverse an object graph
-        }
-    }
-
-    /// <summary>
-    /// Get the compilation output of the source generator as a string.
-    /// </summary>
-    public string GetCompilationOutput(bool withLineNumbers = false)
-    {
-        if (build is null)
-        {
-            _ = Run();
-        }
-
-        var sb = new StringBuilder();
-
-        void WriteHeading(string heading)
-        {
-            if (sb.Length > 0)
-            {
-                _ = sb.AppendLine();
-            }
-
-            var start = $"// == {heading} ==";
-
-            _ = sb.Append(start);
-
-            for (var i = 0; i < 120 - start.Length; i++)
-            {
-                _ = sb.Append('=');
-            }
-
-            _ = sb.AppendLine();
-        }
-
-        if (build.GeneratorDiagnostics.Any())
-        {
-            WriteHeading("Generator Diagnostics");
-            foreach (var diagnostic in build.GeneratorDiagnostics.Order(DiagnosticSortComparer.Instance))
-            {
-                var diagnosticString = NormalizeDiagnosticString(diagnostic);
-                _ = sb.AppendLine(diagnosticString);
-            }
-        }
-
-        if (compilationDiagnostics.Any())
-        {
-            WriteHeading("Compilation Diagnostics");
-            foreach (var diagnostic in compilationDiagnostics.Order(DiagnosticSortComparer.Instance))
-            {
-                var diagnosticString = NormalizeDiagnosticString(diagnostic);
-                _ = sb.AppendLine(diagnosticString);
-            }
-        }
-
-        foreach (var syntaxTree in FilteredSyntaxTrees())
-        {
-            WriteHeading(syntaxTree.FilePath.Replace('\\', '/'));
-
-            if (withLineNumbers)
-            {
-                var lines = syntaxTree.GetText().Lines;
-                var padSize = lines.Count.ToString().Length;
-                foreach (var line in lines)
-                {
-                    _ = sb.AppendLine($"{(line.LineNumber + 1).ToString().PadLeft(padSize)}: {line.Text?.GetSubText(line.Span)}");
-                }
-            }
-            else
-            {
-                sb.AppendLine(syntaxTree.ToString());
-            }
-        }
-
-        return sb.ToString().TrimEnd();
-    }
-
-    static string NormalizeDiagnosticString(Diagnostic diagnostic)
-    {
-        var diagnosticString = diagnostic.ToString();
-        return IsWindows switch
-        {
-            true => diagnosticString.Replace("\\", "/"),
-            _ => diagnosticString
-        };
-    }
-
-    /// <summary>
-    /// Run the source generator (if it hasn't been run already) and run an approval test on the results.
-    /// </summary>
-    public SourceGeneratorTest Approve(Func<string, string>? scrubber = null, [CallerFilePath] string? callerFilePath = null, [CallerMemberName] string? callerMemberName = null)
-    {
-        if (build is null)
-        {
-            _ = Run();
-        }
-
-        _ = ToConsole();
-
-        var output = GetCompilationOutput();
-        var toApprove = ScrubPlatformSpecificInterceptorData().Replace(output, m => m.Value.Replace(m.Groups["InterceptData"].Value, "{PLATFORM-SPECIFIC-BASE64-DATA}"));
-        toApprove = ScrubVersionSpecificAttributeData().Replace(toApprove, m => m.Value.Replace(m.Groups["AssemblyName"].Value, "NService.Core.Analyzer.Tests")
-            .Replace(m.Groups["Version"].Value, "1.0.0"));
-        Approver.Verify(toApprove, scrubber, scenarioName, callerFilePath, callerMemberName);
-        return this;
-    }
-
-    /// <summary>
-    /// Assert that the source generator should not generate any new code given the current sources.
-    /// </summary>
-    public SourceGeneratorTest ShouldNotGenerateCode()
-    {
-        if (build is null)
-        {
-            _ = Run();
-        }
-
-        var generatedOutputs = build.OutputCompilation.Compilation.SyntaxTrees
-            .Where(tree => tree.FilePath.EndsWith(".g.cs"))
-            .ToImmutableArray();
-
-        Assert.That(generatedOutputs.Length, Is.EqualTo(0));
-        return this;
-    }
-
-    [GeneratedRegex("""System\.Runtime\.CompilerServices\.InterceptsLocationAttribute\(1, "(?<InterceptData>[A-Za-z0-9+=/]+)"\)""", RegexOptions.Compiled | RegexOptions.NonBacktracking)]
-    private static partial Regex ScrubPlatformSpecificInterceptorData();
-
-    [GeneratedRegex("""System\.CodeDom\.Compiler\.GeneratedCodeAttribute\("(?<AssemblyName>[^"]+)",\s*"(?<Version>[^"]+)"\)""", RegexOptions.Compiled | RegexOptions.NonBacktracking)]
-    private static partial Regex ScrubVersionSpecificAttributeData();
-
-    /// <summary>
-    /// Run the source generator and write the results to the Console. Most useful for initial development of a source generator.
-    /// </summary>
-    /// <returns></returns>
-    public SourceGeneratorTest ToConsole()
-    {
-        if (wroteToConsole)
-        {
-            return this;
-        }
-
-        if (build is null)
-        {
-            _ = Run();
-        }
-
-        if (AnalyzerTestFixtureState.VerboseLogging)
-        {
-            var output = GetCompilationOutput(true);
-            TestContext.Out.WriteLine(output);
-            wroteToConsole = true;
-        }
-
-        return this;
-    }
-
-    /// <summary>
-    /// Output the steps of a source generator to the console for debugging purposes.
-    /// </summary>
-    public SourceGeneratorTest OutputSteps(params ReadOnlySpan<string> specificStages)
-    {
-        RunClonedBuild();
-
-        foreach (var result in clonedBuild.RunResult.Results)
-        {
-            var generatorType = GetUnderlyingGeneratorType(result.Generator);
-            TestContext.Out.WriteLine($"## {generatorType.Name} Results");
-            TestContext.Out.WriteLine();
-
-            foreach (var stepName in specificStages.Length != 0 ? specificStages : generatorStages[generatorType.FullName!].ToArray())
-            {
-                var namedStep = result.TrackedSteps[stepName];
-                var outputs = namedStep.SelectMany(runStep => runStep.Outputs).ToArray();
-                var outputCount = outputs.Length;
-                var reasons = outputs.Select(o => o.Reason).GroupBy(reason => reason)
-                    .Select(g => $"{g.Count()} {g.Key}")
-                    .ToArray();
-
-                TestContext.Out.WriteLine($"Step {stepName} -  {outputCount} total outputs, {string.Join(", ", reasons)}");
-
-                foreach (var output in outputs)
-                {
-                    TestContext.Out.WriteLine($"- [{output.Reason}] {output.Value}");
-                }
-
-                TestContext.Out.WriteLine();
-            }
-        }
-
-        return this;
-    }
-
-    static Type GetUnderlyingGeneratorType(ISourceGenerator generator)
+    internal static Type GetUnderlyingGeneratorType(ISourceGenerator generator)
     {
         var generatorType = generator.GetType();
         if (generatorType != WrapperType)
@@ -532,51 +262,6 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
         return false;
     }
 
-    IEnumerable<SyntaxTree> FilteredSyntaxTrees() =>
-        build switch
-        {
-            null => throw new Exception("This shouldn't have happened yet."),
-            _ => outputType switch
-            {
-                GeneratorTestOutput.All => build.OutputCompilation.Compilation.SyntaxTrees,
-                GeneratorTestOutput.GeneratedOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => t.FilePath.EndsWith(".g.cs")),
-                GeneratorTestOutput.SourceOnly => build.OutputCompilation.Compilation.SyntaxTrees.Where(t => !t.FilePath.EndsWith(".g.cs")),
-                _ => throw new ArgumentOutOfRangeException()
-            }
-        };
-
-    class Build
-    {
-        readonly Compilation initialCompilation;
-        readonly GeneratorDriver driver;
-        readonly ImmutableArray<DiagnosticAnalyzer> analyzers;
-        readonly ImmutableArray<DiagnosticSuppressor> suppressors;
-
-        public Build(Compilation initialCompilation, GeneratorDriver driver, ImmutableArray<DiagnosticAnalyzer> analyzers, ImmutableArray<DiagnosticSuppressor> suppressors)
-        {
-            this.initialCompilation = initialCompilation;
-            this.driver = driver.RunGeneratorsAndUpdateCompilation(initialCompilation, out var outputCompilation, out var generatorDiagnostics);
-            this.analyzers = analyzers;
-            this.suppressors = suppressors;
-
-            RunResult = this.driver.GetRunResult();
-
-            var allAnalyzers = analyzers.Concat(suppressors).ToImmutableArray();
-            OutputCompilation = outputCompilation.WithAnalyzers(allAnalyzers);
-            GeneratorDiagnostics = generatorDiagnostics;
-        }
-
-        public CompilationWithAnalyzers OutputCompilation { get; }
-        public ImmutableArray<Diagnostic> GeneratorDiagnostics { get; }
-        public GeneratorDriverRunResult RunResult { get; }
-
-        public Build Clone()
-        {
-            var cloneCompilation = initialCompilation.Clone();
-            return new Build(cloneCompilation, driver, analyzers, suppressors);
-        }
-    }
-
     class OptionsProvider(AnalyzerConfigOptions options) : AnalyzerConfigOptionsProvider
     {
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => options;
@@ -590,88 +275,6 @@ public sealed partial class SourceGeneratorTest : BaseCompilationTest<SourceGene
 
         public override bool TryGetValue(string key, out string value)
             => properties.TryGetValue(key, out value!);
-    }
-
-    sealed class DiagnosticSortComparer : IComparer<Diagnostic>
-    {
-        public static DiagnosticSortComparer Instance { get; } = new();
-
-        public int Compare(Diagnostic? x, Diagnostic? y)
-        {
-            if (ReferenceEquals(x, y))
-            {
-                return 0;
-            }
-
-            if (x is null)
-            {
-                return -1;
-            }
-
-            if (y is null)
-            {
-                return 1;
-            }
-
-            var xLoc = x.Location;
-            var yLoc = y.Location;
-
-            var xInSource = xLoc.IsInSource;
-            var yInSource = yLoc.IsInSource;
-
-            // Always order source diagnostics before non-source diagnostics
-            var c = yInSource.CompareTo(xInSource);
-            if (c != 0)
-            {
-                return c;
-            }
-
-            if (xInSource && yInSource)
-            {
-                var xPath = NormalizePath(xLoc!.SourceTree?.FilePath);
-                var yPath = NormalizePath(yLoc!.SourceTree?.FilePath);
-
-                c = StringComparer.Ordinal.Compare(xPath, yPath);
-                if (c != 0)
-                {
-                    return c;
-                }
-
-                var xSpan = xLoc.SourceSpan;
-                var ySpan = yLoc.SourceSpan;
-
-                c = xSpan.Start.CompareTo(ySpan.Start);
-                if (c != 0)
-                {
-                    return c;
-                }
-
-                c = xSpan.Length.CompareTo(ySpan.Length);
-                if (c != 0)
-                {
-                    return c;
-                }
-            }
-
-            c = StringComparer.Ordinal.Compare(x.Id, y.Id);
-            if (c != 0)
-            {
-                return c;
-            }
-
-            c = x.Severity.CompareTo(y.Severity);
-            if (c != 0)
-            {
-                return c;
-            }
-
-            c = StringComparer.Ordinal.Compare(x.GetMessage(), y.GetMessage());
-            return c != 0 ? c :
-                // Final tie-breaker for absolute stability
-                StringComparer.Ordinal.Compare(x.ToString(), y.ToString());
-
-            static string NormalizePath(string? path) => string.IsNullOrEmpty(path) ? "" : path.Replace('\\', '/');
-        }
     }
 }
 
