@@ -86,7 +86,7 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
     private protected async Task<Diagnostic[]> GetAnalyzerDiagnostics(Compilation compilation, string[] ignoreDiagnosticIds, CancellationToken cancellationToken = default)
     {
         var analyzerTasks = analyzers
-            .Select(analyzer => compilation.GetAnalyzerDiagnostics(analyzer, cancellationToken))
+            .Select(analyzer => compilation.GetAnalyzerDiagnostics(analyzer, features, cancellationToken))
             .ToArray();
 
         await Task.WhenAll(analyzerTasks);

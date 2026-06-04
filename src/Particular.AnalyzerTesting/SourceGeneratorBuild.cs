@@ -11,18 +11,25 @@ class SourceGeneratorBuild
     readonly GeneratorDriver driver;
     readonly ImmutableArray<DiagnosticAnalyzer> analyzers;
     readonly ImmutableArray<DiagnosticSuppressor> suppressors;
+    readonly AnalyzerConfigOptionsProvider optionsProvider;
 
-    public SourceGeneratorBuild(Compilation initialCompilation, GeneratorDriver driver, ImmutableArray<DiagnosticAnalyzer> analyzers, ImmutableArray<DiagnosticSuppressor> suppressors)
+    public SourceGeneratorBuild(Compilation initialCompilation, GeneratorDriver driver, ImmutableArray<DiagnosticAnalyzer> analyzers, ImmutableArray<DiagnosticSuppressor> suppressors, AnalyzerConfigOptionsProvider optionsProvider)
     {
         this.initialCompilation = initialCompilation;
         this.driver = driver.RunGeneratorsAndUpdateCompilation(initialCompilation, out var outputCompilation, out var generatorDiagnostics);
         this.analyzers = analyzers;
         this.suppressors = suppressors;
+        this.optionsProvider = optionsProvider;
 
         RunResult = this.driver.GetRunResult();
 
         var allAnalyzers = analyzers.Concat(suppressors).ToImmutableArray();
-        OutputCompilation = outputCompilation.WithAnalyzers(allAnalyzers);
+        var analysisOptions = new CompilationWithAnalyzersOptions(
+            new([], optionsProvider),
+            onAnalyzerException: null,
+            concurrentAnalysis: false,
+            logAnalyzerExecutionTime: false);
+        OutputCompilation = outputCompilation.WithAnalyzers(allAnalyzers, analysisOptions);
         GeneratorDiagnostics = generatorDiagnostics;
     }
 
@@ -33,6 +40,6 @@ class SourceGeneratorBuild
     public SourceGeneratorBuild Clone()
     {
         var cloneCompilation = initialCompilation.Clone();
-        return new SourceGeneratorBuild(cloneCompilation, driver, analyzers, suppressors);
+        return new SourceGeneratorBuild(cloneCompilation, driver, analyzers, suppressors, optionsProvider);
     }
 }
