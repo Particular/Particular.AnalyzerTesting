@@ -27,4 +27,12 @@ public static class DiagnosticDescriptors
         category: "Code",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor TestFlagEnabled = new(
+        id: DiagnosticIds.TestFlagEnabled,
+        title: "Test flag is enabled",
+        messageFormat: "The test flag is enabled for '{0}'",
+        category: "Code",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }
