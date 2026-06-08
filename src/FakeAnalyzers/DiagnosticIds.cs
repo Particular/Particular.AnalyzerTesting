@@ -9,4 +9,5 @@ public static class DiagnosticIds
     public const string NowUsedInsteadOfUtcNow = "FAKE0001";
     public const string AsyncVoid = "FAKE0002";
     public const string IdentifierContainsFoo = "FAKE0003";
+    public const string TestFlagEnabled = "FAKE0004";
 }

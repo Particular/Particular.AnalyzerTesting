@@ -170,7 +170,7 @@ public sealed class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTes
             disabledOutputs: IncrementalGeneratorOutputKind.None,
             trackIncrementalGeneratorSteps: true);
 
-        var optsProvider = new OptionsProvider(new DictionaryAnalyzerOptions(features));
+        var optsProvider = AnalyzerConfigOptionsFactory.CreateOptionsProvider(features);
 
         var driver = CSharpGeneratorDriver.Create(generators,
             driverOptions: driverOpts,
@@ -183,7 +183,7 @@ public sealed class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTes
 
         ImmutableArray<DiagnosticAnalyzer> analyzersToUse = analyzers.Count > 0 ? [.. analyzers] : [new NoOpAnalyzer()];
         ImmutableArray<DiagnosticSuppressor> suppressorsToUse = suppressors.Count > 0 ? [.. suppressors] : [];
-        build = new SourceGeneratorBuild(initialCompilation, driver, analyzersToUse, suppressorsToUse);
+        build = new SourceGeneratorBuild(initialCompilation, driver, analyzersToUse, suppressorsToUse, optsProvider);
 
         try
         {
@@ -260,21 +260,6 @@ public sealed class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTes
 
         names = [];
         return false;
-    }
-
-    class OptionsProvider(AnalyzerConfigOptions options) : AnalyzerConfigOptionsProvider
-    {
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => options;
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => options;
-        public override AnalyzerConfigOptions GlobalOptions => options;
-    }
-
-    internal sealed class DictionaryAnalyzerOptions(Dictionary<string, string> properties) : AnalyzerConfigOptions
-    {
-        public static DictionaryAnalyzerOptions Empty { get; } = new([]);
-
-        public override bool TryGetValue(string key, out string value)
-            => properties.TryGetValue(key, out value!);
     }
 }
 
