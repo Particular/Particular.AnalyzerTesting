@@ -1,8 +1,11 @@
 namespace Particular.AnalyzerTesting;
 
-using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -22,12 +25,22 @@ public abstract class BaseCompilationTest<TSelf> where TSelf : BaseCompilationTe
     {
         this.outputAssemblyName = outputAssemblyName ?? "TestAssembly";
 
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-        foreach (var assembly in assemblies)
+        foreach (var assembly in AssemblyLoadContext.Default.Assemblies)
         {
             if (!assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
             {
                 References.Add(MetadataReference.CreateFromFile(assembly.Location));
+            }
+        }
+
+        foreach (var assemblyPath in Directory.EnumerateFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll"))
+        {
+            using var stream = File.OpenRead(assemblyPath);
+            using var file = new PEReader(stream);
+
+            if (file.HasMetadata)
+            {
+                References.Add(MetadataReference.CreateFromFile(assemblyPath));
             }
         }
     }
