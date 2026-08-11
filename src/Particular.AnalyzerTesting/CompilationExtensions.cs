@@ -32,12 +32,17 @@ static class CompilationExtensions
             Debug.WriteLine("Compilation failed.");
         }
 
-        public async Task<IEnumerable<Diagnostic>> GetAnalyzerDiagnostics(DiagnosticAnalyzer analyzer, IReadOnlyDictionary<string, string> properties, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Diagnostic>> GetAnalyzerDiagnostics(
+            DiagnosticAnalyzer analyzer,
+            IReadOnlyDictionary<string, string> globalProperties,
+            IReadOnlyDictionary<string, string> sourceProperties,
+            IReadOnlyDictionary<string, Dictionary<string, string>> sourceFileProperties,
+            CancellationToken cancellationToken = default)
         {
             var exceptions = new List<Exception>();
 
             var analysisOptions = new CompilationWithAnalyzersOptions(
-                AnalyzerConfigOptionsFactory.CreateAnalyzerOptions(properties),
+                AnalyzerConfigOptionsFactory.CreateAnalyzerOptions(globalProperties, sourceProperties, sourceFileProperties),
                 (exception, _, __) => exceptions.Add(exception),
                 concurrentAnalysis: false,
                 logAnalyzerExecutionTime: false);

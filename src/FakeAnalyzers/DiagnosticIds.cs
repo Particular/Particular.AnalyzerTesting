@@ -10,4 +10,5 @@ public static class DiagnosticIds
     public const string AsyncVoid = "FAKE0002";
     public const string IdentifierContainsFoo = "FAKE0003";
     public const string TestFlagEnabled = "FAKE0004";
+    public const string EditorConfigOptionEnabled = "FAKE0005";
 }

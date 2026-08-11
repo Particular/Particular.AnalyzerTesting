@@ -170,7 +170,7 @@ public sealed class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTes
             disabledOutputs: IncrementalGeneratorOutputKind.None,
             trackIncrementalGeneratorSteps: true);
 
-        var optsProvider = AnalyzerConfigOptionsFactory.CreateOptionsProvider(features);
+        var optsProvider = AnalyzerConfigOptionsFactory.CreateOptionsProvider(features, editorConfigOptions, editorConfigOptionsByFilename);
 
         var driver = CSharpGeneratorDriver.Create(generators,
             driverOptions: driverOpts,

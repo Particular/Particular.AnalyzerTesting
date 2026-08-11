@@ -37,6 +37,7 @@ namespace Particular.AnalyzerTesting
         public TSelf SuppressCompilationErrors() { }
         public TSelf WithAnalyzer<TAnalyzer>()
             where TAnalyzer : Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer, new () { }
+        public TSelf WithEditorConfigOption(string name, string value, string? filename = null) { }
         public TSelf WithInterceptorNamespace(string interceptorNamespace) { }
         public TSelf WithLangVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion langVersion) { }
         public TSelf WithProperty(string name, string value) { }
