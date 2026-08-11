@@ -90,14 +90,14 @@ public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
             }
             compilation.Compile(!suppressCompilationErrors);
 
-            var analyzerDiagnostics = await GetAnalyzerDiagnostics(compilation, [], cancellationToken);
+            var analyzerDiagnostics = await GetAnalyzerDiagnostics(compilation, [], includeSeveritySuppressed: false, cancellationToken);
 
-            if (analyzerDiagnostics.Length == 0)
+            if (analyzerDiagnostics.Visible.Length == 0)
             {
                 break;
             }
 
-            var actions = await GetCodeFixActions(project, analyzerDiagnostics, cancellationToken);
+            var actions = await GetCodeFixActions(project, analyzerDiagnostics.Visible, cancellationToken);
             if (actions.Length == 0)
             {
                 break;
@@ -150,7 +150,11 @@ public sealed class CodeFixTest : BaseAnalyzerTest<CodeFixTest>
 
     async Task<(Document Document, CodeAction Action)[]> GetCodeFixActions(Project project, Diagnostic[] diagnostics, CancellationToken cancellationToken)
     {
-        var diagnosticsByFile = diagnostics.ToLookup(d => d.Location.SourceTree!.FilePath);
+        // Suppressed diagnostics (for example through pragma directives or a DiagnosticSuppressor)
+        // must never be offered as code fixes. Severity-suppressed diagnostics do not reach this
+        // point at all because Roslyn drops them before reporting.
+        var visibleDiagnostics = diagnostics.Where(diagnostic => !diagnostic.IsSuppressed).ToArray();
+        var diagnosticsByFile = visibleDiagnostics.ToLookup(d => d.Location.SourceTree!.FilePath);
         var fixesById = codeFixes.SelectMany(fix => fix.FixableDiagnosticIds.Select(id => (id, fix)))
             .ToLookup(f => f.id, f => f.fix);
 

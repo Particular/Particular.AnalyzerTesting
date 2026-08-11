@@ -192,7 +192,10 @@ Multiple source files can be added with separate `WithSource` calls.
 | `WithInterceptorNamespace(ns)` | Add an interceptors namespace feature flag to the compilation. |
 | `WithProperty(name, value)` | Add an arbitrary MSBuild-style build property (feature flag) to the compilation. The property is available through global and syntax-tree analyzer config options. |
 | `WithEditorConfigOption(name, value, filename)` | Add an EditorConfig option to syntax-tree analyzer config options. Omit `filename` to apply it to all source files; specify a filename to scope it to that source file. EditorConfig options are not available through global analyzer config options. |
-| `AssertDiagnostics(expectedDiagnosticIds)` | Run the analyzer and assert that the diagnostics match the `[|…|]`-marked locations. |
+| `WithDiagnosticSeverity(id, severity, filename)` | Configure the severity of a diagnostic, like `dotnet_diagnostic.<id>.severity` in an .editorconfig. Omit `filename` to apply it to all source files. File-specific severity overrides all-source severity, and tree-level severity overrides `WithGlobalDiagnosticSeverity`. |
+| `WithGlobalDiagnosticSeverity(id, severity)` | Configure the severity of a diagnostic globally for the compilation, like a global configuration file. Applies only when no tree-level severity is configured. |
+| `AssertDiagnostics(expectedDiagnosticIds)` | Run the analyzer and assert that the diagnostics match the `[|…|]`-marked locations and their effective severities. Diagnostics suppressed by a severity configuration are not considered reported. |
+| `AssertSuppressedDiagnostics(expectedDiagnosticIds)` | Assert that the analyzer reported the `[|…|]`-marked diagnostics but that they are suppressed, for example because a severity configuration (per-diagnostic, global, or bulk `dotnet_analyzer_diagnostic` EditorConfig severity) set their severity to none. Distinguishes "the analyzer did not report" from "reported but suppressed". Fails with an explanatory message when the analyzer is self-gating (opt-in) and does not report without a severity configuration. |
 
 ## Testing code fixes
 
@@ -256,7 +259,9 @@ To configure all code fix tests in a project, use `CodeFixTest.ConfigureAllCodeF
 | `WithInterceptorNamespace(ns)` | Add an interceptors namespace feature flag to the compilation. |
 | `WithProperty(name, value)` | Add an arbitrary build property to the compilation. The property is available through global and syntax-tree analyzer config options. |
 | `WithEditorConfigOption(name, value, filename)` | Add an EditorConfig option to syntax-tree analyzer config options. Omit `filename` to apply it to all source files; specify a filename to scope it to that source file. EditorConfig options are not available through global analyzer config options. |
-| `AssertCodeFixes()` | Apply code fixes iteratively and assert that the final source matches the expected output. |
+| `WithDiagnosticSeverity(id, severity, filename)` | Configure the severity of a diagnostic, like `dotnet_diagnostic.<id>.severity` in an .editorconfig. Omit `filename` to apply it to all source files. |
+| `WithGlobalDiagnosticSeverity(id, severity)` | Configure the severity of a diagnostic globally for the compilation, like a global configuration file. |
+| `AssertCodeFixes()` | Apply code fixes iteratively and assert that the final source matches the expected output. Suppressed diagnostics are never offered as fixes. |
 
 ## Testing source generators
 
@@ -312,6 +317,8 @@ To configure all source generator tests in a project, use `SourceGeneratorTest.C
 | `WithInterceptorNamespace(ns)` | Add an interceptors namespace feature flag to the compilation. |
 | `WithProperty(name, value)` | Add an arbitrary build property to the compilation. The property is available through global and syntax-tree analyzer config options. |
 | `WithEditorConfigOption(name, value, filename)` | Add an EditorConfig option to syntax-tree analyzer config options. Omit `filename` to apply it to all source files; specify a filename to scope it to that source file. EditorConfig options are not available through global analyzer config options. |
+| `WithDiagnosticSeverity(id, severity, filename)` | Configure the severity of a diagnostic, like `dotnet_diagnostic.<id>.severity` in an .editorconfig. Omit `filename` to apply it to all source files. Applies to generator and analyzer diagnostics. |
+| `WithGlobalDiagnosticSeverity(id, severity)` | Configure the severity of a diagnostic globally for the compilation, like a global configuration file. |
 | `Run()` | Run the source generator without running an approval test. |
 | `Approve(scrubber)` | Run the generator (if not already run) and perform an approval test on the generated output. |
 | `ShouldNotGenerateCode()` | Assert that the source generator produces no output for the given sources. |

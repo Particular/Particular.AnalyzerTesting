@@ -11,4 +11,5 @@ public static class DiagnosticIds
     public const string IdentifierContainsFoo = "FAKE0003";
     public const string TestFlagEnabled = "FAKE0004";
     public const string EditorConfigOptionEnabled = "FAKE0005";
+    public const string GeneratorReported = "FAKE0006";
 }

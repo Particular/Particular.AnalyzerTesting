@@ -177,7 +177,8 @@ public sealed class SourceGeneratorTest : BaseCompilationTest<SourceGeneratorTes
             optionsProvider: optsProvider,
             parseOptions: parseOptions);
 
-        var compileOpts = new CSharpCompilationOptions(buildOutputType);
+        var compileOpts = new CSharpCompilationOptions(buildOutputType)
+            .WithSyntaxTreeOptionsProvider(CreateSyntaxTreeOptionsProvider());
 
         initialCompilation = CSharpCompilation.Create(outputAssemblyName, syntaxTrees, References, compileOpts);
 
