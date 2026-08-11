@@ -29,7 +29,9 @@ public class TestFlagAnalyzer : DiagnosticAnalyzer
 
     static void AnalyzeClass(SyntaxNodeAnalysisContext context)
     {
-        if (context.Node is not ClassDeclarationSyntax classDeclaration)
+        if (context.Node is not ClassDeclarationSyntax classDeclaration ||
+            !context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree).TryGetValue("build_property.TestFlag", out var value) ||
+            value != "enabled")
         {
             return;
         }

@@ -20,6 +20,8 @@ public abstract class BaseCompilationTest<TSelf> where TSelf : BaseCompilationTe
     private protected OutputKind buildOutputType = OutputKind.DynamicallyLinkedLibrary;
     private protected bool suppressCompilationErrors;
     private protected readonly Dictionary<string, string> features = [];
+    private protected readonly Dictionary<string, string> editorConfigOptions = [];
+    private protected readonly Dictionary<string, Dictionary<string, string>> editorConfigOptionsByFilename = [];
 
     private protected BaseCompilationTest(string? outputAssemblyName = null)
     {
@@ -128,11 +130,34 @@ public abstract class BaseCompilationTest<TSelf> where TSelf : BaseCompilationTe
     }
 
     /// <summary>
-    /// Add a build property to the compilation.
+    /// Add a build property to the compilation. The property is available through both the global and syntax-tree analyzer config options.
     /// </summary>
     public TSelf WithProperty(string name, string value)
     {
         features.Add(name, value);
+        return Self;
+    }
+
+    /// <summary>
+    /// Add an EditorConfig option that is available through syntax-tree analyzer config options.
+    /// Omit <paramref name="filename" /> to apply the option to every source file.
+    /// The option is not added to global analyzer config options.
+    /// </summary>
+    public TSelf WithEditorConfigOption(string name, string value, string? filename = null)
+    {
+        if (filename is null)
+        {
+            editorConfigOptions.Add(name, value);
+            return Self;
+        }
+
+        if (!editorConfigOptionsByFilename.TryGetValue(filename, out var fileOptions))
+        {
+            fileOptions = [];
+            editorConfigOptionsByFilename.Add(filename, fileOptions);
+        }
+
+        fileOptions.Add(name, value);
         return Self;
     }
 }

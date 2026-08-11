@@ -35,4 +35,12 @@ public static class DiagnosticDescriptors
         category: "Code",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor EditorConfigOptionEnabled = new(
+        id: DiagnosticIds.EditorConfigOptionEnabled,
+        title: "EditorConfig option is enabled",
+        messageFormat: "The EditorConfig option is enabled for '{0}'",
+        category: "Code",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

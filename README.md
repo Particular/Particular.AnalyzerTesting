@@ -190,7 +190,8 @@ Multiple source files can be added with separate `WithSource` calls.
 | `BuildAs(outputKind)` | Change the compilation output kind (defaults to `DynamicallyLinkedLibrary`). |
 | `SuppressCompilationErrors()` | Ignore compilation errors, useful when testing analyzers that run on code that does not compile. |
 | `WithInterceptorNamespace(ns)` | Add an interceptors namespace feature flag to the compilation. |
-| `WithProperty(name, value)` | Add an arbitrary MSBuild-style build property (feature flag) to the compilation. |
+| `WithProperty(name, value)` | Add an arbitrary MSBuild-style build property (feature flag) to the compilation. The property is available through global and syntax-tree analyzer config options. |
+| `WithEditorConfigOption(name, value, filename)` | Add an EditorConfig option to syntax-tree analyzer config options. Omit `filename` to apply it to all source files; specify a filename to scope it to that source file. EditorConfig options are not available through global analyzer config options. |
 | `AssertDiagnostics(expectedDiagnosticIds)` | Run the analyzer and assert that the diagnostics match the `[|…|]`-marked locations. |
 
 ## Testing code fixes
@@ -253,7 +254,8 @@ To configure all code fix tests in a project, use `CodeFixTest.ConfigureAllCodeF
 | `BuildAs(outputKind)` | Change the compilation output kind. |
 | `SuppressCompilationErrors()` | Ignore compilation errors. |
 | `WithInterceptorNamespace(ns)` | Add an interceptors namespace feature flag to the compilation. |
-| `WithProperty(name, value)` | Add an arbitrary build property to the compilation. |
+| `WithProperty(name, value)` | Add an arbitrary build property to the compilation. The property is available through global and syntax-tree analyzer config options. |
+| `WithEditorConfigOption(name, value, filename)` | Add an EditorConfig option to syntax-tree analyzer config options. Omit `filename` to apply it to all source files; specify a filename to scope it to that source file. EditorConfig options are not available through global analyzer config options. |
 | `AssertCodeFixes()` | Apply code fixes iteratively and assert that the final source matches the expected output. |
 
 ## Testing source generators
@@ -308,7 +310,8 @@ To configure all source generator tests in a project, use `SourceGeneratorTest.C
 | `SuppressCompilationErrors()` | Ignore compilation warnings and errors. |
 | `SuppressDiagnosticErrors()` | Ignore errors raised by the source generator itself. |
 | `WithInterceptorNamespace(ns)` | Add an interceptors namespace feature flag to the compilation. |
-| `WithProperty(name, value)` | Add an arbitrary build property to the compilation. |
+| `WithProperty(name, value)` | Add an arbitrary build property to the compilation. The property is available through global and syntax-tree analyzer config options. |
+| `WithEditorConfigOption(name, value, filename)` | Add an EditorConfig option to syntax-tree analyzer config options. Omit `filename` to apply it to all source files; specify a filename to scope it to that source file. EditorConfig options are not available through global analyzer config options. |
 | `Run()` | Run the source generator without running an approval test. |
 | `Approve(scrubber)` | Run the generator (if not already run) and perform an approval test on the generated output. |
 | `ShouldNotGenerateCode()` | Assert that the source generator produces no output for the given sources. |
