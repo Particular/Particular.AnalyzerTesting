@@ -49,7 +49,8 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
         var project = new AdhocWorkspace()
             .AddProject(outputAssemblyName, LanguageNames.CSharp)
             .WithParseOptions(parseOptions)
-            .WithCompilationOptions(new CSharpCompilationOptions(buildOutputType))
+            .WithCompilationOptions(new CSharpCompilationOptions(buildOutputType)
+                .WithSyntaxTreeOptionsProvider(CreateSyntaxTreeOptionsProvider()))
             .AddMetadataReferences(References);
 
         foreach (var source in codeSources)
@@ -83,10 +84,13 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
         return compilerDiagnostics;
     }
 
-    private protected async Task<Diagnostic[]> GetAnalyzerDiagnostics(Compilation compilation, string[] ignoreDiagnosticIds, CancellationToken cancellationToken = default)
+    private protected async Task<AnalyzerDiagnosticsResult> GetAnalyzerDiagnostics(Compilation compilation, string[] ignoreDiagnosticIds, bool includeSeveritySuppressed, CancellationToken cancellationToken = default)
     {
+        var optionsProvider = AnalyzerConfigOptionsFactory.CreateOptionsProvider(features, editorConfigOptions, editorConfigOptionsByFilename);
+        var configuredProvider = CreateSyntaxTreeOptionsProvider();
+
         var analyzerTasks = analyzers
-            .Select(analyzer => compilation.GetAnalyzerDiagnostics(analyzer, features, editorConfigOptions, editorConfigOptionsByFilename, cancellationToken))
+            .Select(analyzer => compilation.GetAnalyzerDiagnostics(analyzer, optionsProvider, configuredProvider, reportSuppressedDiagnostics: true, cancellationToken))
             .ToArray();
 
         await Task.WhenAll(analyzerTasks);
@@ -97,8 +101,166 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
             .ToArray();
 
         OutputAnalyzerDiagnostics(analyzerDiagnostics);
-        return analyzerDiagnostics;
+
+        // Suppressed diagnostics (pragma, DiagnosticSuppressor) are reported with IsSuppressed set;
+        // they are never visible but were not suppressed by a severity configuration.
+        var visibleDiagnostics = analyzerDiagnostics.Where(d => !d.IsSuppressed).ToArray();
+
+        if (!includeSeveritySuppressed)
+        {
+            return new AnalyzerDiagnosticsResult(visibleDiagnostics, []);
+        }
+
+        // Roslyn drops severity-suppressed diagnostics before reporting, even with
+        // reportSuppressedDiagnostics enabled. Re-run with a neutral provider to observe what the
+        // analyzer reported without severity filtering, so the two cases can be distinguished.
+        // The neutral run also strips bulk severity keys from the analyzer config options, since
+        // Roslyn applies them through the driver as well.
+        var neutralProvider = SyntaxTreeOptionsProviderFactory.CreateNeutral();
+        var neutralOptionsProvider = AnalyzerConfigOptionsFactory.CreateNeutralOptionsProvider(features, editorConfigOptions, editorConfigOptionsByFilename);
+        var neutralTasks = analyzers
+            .Select(analyzer => compilation.GetAnalyzerDiagnostics(analyzer, neutralOptionsProvider, neutralProvider, reportSuppressedDiagnostics: true, cancellationToken))
+            .ToArray();
+
+        await Task.WhenAll(neutralTasks);
+
+        var severitySuppressedDiagnostics = neutralTasks
+            .SelectMany(t => t.Result)
+            .Where(d => !ignoreDiagnosticIds.Contains(d.Id))
+            // Exclude diagnostics suppressed through pragma directives or DiagnosticSuppressors:
+            // they are reported with IsSuppressed set and are not suppressed by a severity configuration.
+            .Where(d => !d.IsSuppressed)
+            .Where(d => !visibleDiagnostics.Any(v => v.Id == d.Id && v.Location.SourceSpan == d.Location.SourceSpan && v.Location.SourceTree?.FilePath == d.Location.SourceTree?.FilePath))
+            .ToArray();
+
+        return new AnalyzerDiagnosticsResult(visibleDiagnostics, severitySuppressedDiagnostics);
     }
+
+    /// <summary>
+    /// Resolve the expected effective severity of a diagnostic id for a source file, mirroring how
+    /// Roslyn resolves severity: file-specific, then all-source, then global, then bulk category and
+    /// all-analyzer configuration, then the descriptor default.
+    /// </summary>
+    private protected ReportDiagnostic ResolveExpectedSeverity(string filename, string diagnosticId, DiagnosticDescriptor? descriptor)
+    {
+        foreach (var (configuredFilename, fileSeverities) in diagnosticSeveritiesByFilename)
+        {
+            if (FilenameComparer.Matches(configuredFilename, filename) &&
+                fileSeverities.TryGetValue(diagnosticId, out var fileSeverity))
+            {
+                return fileSeverity;
+            }
+        }
+
+        if (diagnosticSeverities.TryGetValue(diagnosticId, out var allSourceSeverity))
+        {
+            return allSourceSeverity;
+        }
+
+        if (globalDiagnosticSeverities.TryGetValue(diagnosticId, out var globalSeverity))
+        {
+            return globalSeverity;
+        }
+
+        // Bulk configuration only applies to diagnostics enabled by default.
+        if (descriptor is { IsEnabledByDefault: true })
+        {
+            var bulkOptions = new Dictionary<string, string>(editorConfigOptions);
+
+            foreach (var (configuredFilename, fileOptions) in editorConfigOptionsByFilename)
+            {
+                if (FilenameComparer.Matches(configuredFilename, filename))
+                {
+                    foreach (var (key, value) in fileOptions)
+                    {
+                        bulkOptions[key] = value;
+                    }
+                }
+            }
+
+            if (TryGetBulkSeverity(bulkOptions, $"dotnet_analyzer_diagnostic.category-{descriptor.Category}.severity", out var bulkSeverity))
+            {
+                return bulkSeverity;
+            }
+
+            if (TryGetBulkSeverity(bulkOptions, "dotnet_analyzer_diagnostic.severity", out bulkSeverity))
+            {
+                return bulkSeverity;
+            }
+        }
+
+        return ReportDiagnostic.Default;
+    }
+
+    static bool TryGetBulkSeverity(IReadOnlyDictionary<string, string> options, string key, out ReportDiagnostic severity)
+    {
+        if (options.TryGetValue(key, out var value) && TryParseSeverity(value, out severity))
+        {
+            return true;
+        }
+
+        severity = ReportDiagnostic.Default;
+        return false;
+    }
+
+    // Mirrors AnalyzerConfigSet.TryParseSeverity.
+    static bool TryParseSeverity(string value, out ReportDiagnostic severity)
+    {
+        if (string.Equals(value, "default", StringComparison.OrdinalIgnoreCase))
+        {
+            severity = ReportDiagnostic.Default;
+            return true;
+        }
+
+        if (string.Equals(value, "error", StringComparison.OrdinalIgnoreCase))
+        {
+            severity = ReportDiagnostic.Error;
+            return true;
+        }
+
+        if (string.Equals(value, "warning", StringComparison.OrdinalIgnoreCase))
+        {
+            severity = ReportDiagnostic.Warn;
+            return true;
+        }
+
+        if (string.Equals(value, "suggestion", StringComparison.OrdinalIgnoreCase))
+        {
+            severity = ReportDiagnostic.Info;
+            return true;
+        }
+
+        if (string.Equals(value, "silent", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "refactoring", StringComparison.OrdinalIgnoreCase))
+        {
+            severity = ReportDiagnostic.Hidden;
+            return true;
+        }
+
+        if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase))
+        {
+            severity = ReportDiagnostic.Suppress;
+            return true;
+        }
+
+        severity = ReportDiagnostic.Default;
+        return false;
+    }
+
+    private protected static ReportDiagnostic MapDescriptorSeverity(DiagnosticDescriptor descriptor)
+        => descriptor.IsEnabledByDefault
+            ? MapSeverityToReport(descriptor.DefaultSeverity)
+            : ReportDiagnostic.Suppress;
+
+    static ReportDiagnostic MapSeverityToReport(DiagnosticSeverity severity)
+        => severity switch
+        {
+            DiagnosticSeverity.Error => ReportDiagnostic.Error,
+            DiagnosticSeverity.Warning => ReportDiagnostic.Warn,
+            DiagnosticSeverity.Info => ReportDiagnostic.Info,
+            DiagnosticSeverity.Hidden => ReportDiagnostic.Hidden,
+            _ => ReportDiagnostic.Hidden
+        };
 
     private protected SourceFile CreateFile(string filename, string sourceCode, bool parseDiagnosticMarkup)
     {
@@ -211,5 +373,6 @@ public partial class BaseAnalyzerTest<TSelf> : BaseCompilationTest<TSelf> where 
     }
 
     private protected record SourceFile(string Filename, string Source, TextSpan[] Spans);
-    private protected record DiagnosticInfo(string Filename, TextSpan Span, string Id);
+    private protected record DiagnosticInfo(string Filename, TextSpan Span, string Id, DiagnosticSeverity Severity);
+    private protected record AnalyzerDiagnosticsResult(Diagnostic[] Visible, Diagnostic[] SeveritySuppressed);
 }

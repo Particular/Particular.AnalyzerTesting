@@ -43,4 +43,12 @@ public static class DiagnosticDescriptors
         category: "Code",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor GeneratorReported = new(
+        id: DiagnosticIds.GeneratorReported,
+        title: "Generator reported a diagnostic",
+        messageFormat: "The source generator reported a diagnostic for '{0}'",
+        category: "Code",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

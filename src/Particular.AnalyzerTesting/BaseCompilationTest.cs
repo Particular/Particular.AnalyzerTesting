@@ -22,6 +22,9 @@ public abstract class BaseCompilationTest<TSelf> where TSelf : BaseCompilationTe
     private protected readonly Dictionary<string, string> features = [];
     private protected readonly Dictionary<string, string> editorConfigOptions = [];
     private protected readonly Dictionary<string, Dictionary<string, string>> editorConfigOptionsByFilename = [];
+    private protected readonly Dictionary<string, ReportDiagnostic> diagnosticSeverities = [];
+    private protected readonly Dictionary<string, Dictionary<string, ReportDiagnostic>> diagnosticSeveritiesByFilename = [];
+    private protected readonly Dictionary<string, ReportDiagnostic> globalDiagnosticSeverities = [];
 
     private protected BaseCompilationTest(string? outputAssemblyName = null)
     {
@@ -160,4 +163,46 @@ public abstract class BaseCompilationTest<TSelf> where TSelf : BaseCompilationTe
         fileOptions.Add(name, value);
         return Self;
     }
+
+    /// <summary>
+    /// Configure the severity of a diagnostic id for every source file in the test, equivalent to
+    /// <c>dotnet_diagnostic.&lt;id&gt;.severity = ...</c> in an .editorconfig applied to all files.
+    /// The severity is available to Roslyn through the compilation's <see cref="SyntaxTreeOptionsProvider" />.
+    /// </summary>
+    public TSelf WithDiagnosticSeverity(string diagnosticId, ReportDiagnostic severity)
+    {
+        diagnosticSeverities[diagnosticId] = severity;
+        return Self;
+    }
+
+    /// <summary>
+    /// Configure the severity of a diagnostic id for a specific source file, equivalent to a
+    /// file-scoped <c>[filename]</c> .editorconfig section. A file-specific severity overrides the
+    /// all-source severity for that file.
+    /// </summary>
+    public TSelf WithDiagnosticSeverity(string diagnosticId, ReportDiagnostic severity, string filename)
+    {
+        if (!diagnosticSeveritiesByFilename.TryGetValue(filename, out var fileSeverities))
+        {
+            fileSeverities = [];
+            diagnosticSeveritiesByFilename.Add(filename, fileSeverities);
+        }
+
+        fileSeverities[diagnosticId] = severity;
+        return Self;
+    }
+
+    /// <summary>
+    /// Configure the severity of a diagnostic id globally for the compilation, equivalent to a global
+    /// configuration file. A global severity only applies when no tree-level severity (file-specific
+    /// or all-source) is configured for the diagnostic.
+    /// </summary>
+    public TSelf WithGlobalDiagnosticSeverity(string diagnosticId, ReportDiagnostic severity)
+    {
+        globalDiagnosticSeverities[diagnosticId] = severity;
+        return Self;
+    }
+
+    private protected SyntaxTreeOptionsProvider CreateSyntaxTreeOptionsProvider()
+        => SyntaxTreeOptionsProviderFactory.Create(diagnosticSeverities, diagnosticSeveritiesByFilename, globalDiagnosticSeverities);
 }

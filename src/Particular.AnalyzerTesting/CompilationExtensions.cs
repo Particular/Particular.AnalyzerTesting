@@ -34,20 +34,27 @@ static class CompilationExtensions
 
         public async Task<IEnumerable<Diagnostic>> GetAnalyzerDiagnostics(
             DiagnosticAnalyzer analyzer,
-            IReadOnlyDictionary<string, string> globalProperties,
-            IReadOnlyDictionary<string, string> sourceProperties,
-            IReadOnlyDictionary<string, Dictionary<string, string>> sourceFileProperties,
+            AnalyzerConfigOptionsProvider optionsProvider,
+            SyntaxTreeOptionsProvider syntaxTreeOptionsProvider,
+            bool reportSuppressedDiagnostics,
             CancellationToken cancellationToken = default)
         {
             var exceptions = new List<Exception>();
 
             var analysisOptions = new CompilationWithAnalyzersOptions(
-                AnalyzerConfigOptionsFactory.CreateAnalyzerOptions(globalProperties, sourceProperties, sourceFileProperties),
+                new AnalyzerOptions([], optionsProvider),
                 (exception, _, __) => exceptions.Add(exception),
                 concurrentAnalysis: false,
-                logAnalyzerExecutionTime: false);
+                logAnalyzerExecutionTime: false,
+                reportSuppressedDiagnostics: reportSuppressedDiagnostics);
 
-            var diagnostics = await compilation
+            // Swap in the requested severity provider. The compilation is created by the test with
+            // the configured provider, but the neutral provider is used to observe what analyzers
+            // report before Roslyn's severity filtering kicks in.
+            var compilationWithSeverity = compilation.WithOptions(
+                compilation.Options.WithSyntaxTreeOptionsProvider(syntaxTreeOptionsProvider));
+
+            var diagnostics = await compilationWithSeverity
                 .WithAnalyzers([analyzer], analysisOptions)
                 .GetAnalyzerDiagnosticsAsync(cancellationToken);
 

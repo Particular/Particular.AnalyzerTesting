@@ -5,6 +5,8 @@ namespace Particular.AnalyzerTesting
     {
         public System.Threading.Tasks.Task AssertDiagnostics(params string[] expectedDiagnosticIds) { }
         public System.Threading.Tasks.Task AssertDiagnostics(string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds) { }
+        public System.Threading.Tasks.Task AssertSuppressedDiagnostics(params string[] expectedDiagnosticIds) { }
+        public System.Threading.Tasks.Task AssertSuppressedDiagnostics(string[] expectedDiagnosticIds, string[] ignoreDiagnosticIds) { }
         public Particular.AnalyzerTesting.AnalyzerTest WithSource(string source, string? filename = null) { }
         public static void ConfigureAllAnalyzerTests(System.Action<Particular.AnalyzerTesting.AnalyzerTest> configure) { }
         public static Particular.AnalyzerTesting.AnalyzerTest ForAnalyzer<TAnalyzer>([System.Runtime.CompilerServices.CallerMemberName] string? outputAssemblyName = null)
@@ -37,7 +39,10 @@ namespace Particular.AnalyzerTesting
         public TSelf SuppressCompilationErrors() { }
         public TSelf WithAnalyzer<TAnalyzer>()
             where TAnalyzer : Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer, new () { }
+        public TSelf WithDiagnosticSeverity(string diagnosticId, Microsoft.CodeAnalysis.ReportDiagnostic severity) { }
+        public TSelf WithDiagnosticSeverity(string diagnosticId, Microsoft.CodeAnalysis.ReportDiagnostic severity, string filename) { }
         public TSelf WithEditorConfigOption(string name, string value, string? filename = null) { }
+        public TSelf WithGlobalDiagnosticSeverity(string diagnosticId, Microsoft.CodeAnalysis.ReportDiagnostic severity) { }
         public TSelf WithInterceptorNamespace(string interceptorNamespace) { }
         public TSelf WithLangVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion langVersion) { }
         public TSelf WithProperty(string name, string value) { }
